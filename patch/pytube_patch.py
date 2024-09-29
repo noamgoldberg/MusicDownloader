@@ -8,12 +8,15 @@ interpreter_path = sys.executable
 python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
 
 PATCH_SCRIPT_FILEPATH = os.path.relpath(__file__)
-INCORRECT_FILE_FILEPATH = os.path.join(
+SITE_PACKAGES_DIR = os.path.join(
     os.path.dirname(interpreter_path), 
     '..',  # Navigate up one directory level
     'lib',
     f'python{python_version}',  # Dynamically include Python version
-    'site-packages', 
+    'site-packages'
+)
+INCORRECT_FILE_FILEPATH = os.path.join(
+    SITE_PACKAGES_DIR,
     'pytube', 
     'cipher.py'
 )
@@ -23,6 +26,8 @@ CORRECTED_FILE_FILEPATH = os.path.join(
 )
 
 def is_pytube_patched():
+    print(f"SITE_PACKAGES_DIR: {SITE_PACKAGES_DIR}")
+    print(f"os.listdir(SITE_PACKAGES_DIR) {os.listdir(SITE_PACKAGES_DIR)}")
     print(f"INCORRECT FILE FILEPATH: {INCORRECT_FILE_FILEPATH}")
     with open(INCORRECT_FILE_FILEPATH, "r") as f:
         file_content = f.read()
