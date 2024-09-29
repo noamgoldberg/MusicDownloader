@@ -1,4 +1,4 @@
-from typing import Union, Tuple
+from typing import Union, Tuple, Dict
 import streamlit as st
 from io import BytesIO
 import yt_dlp
@@ -40,6 +40,12 @@ def get_entity_class_from_url(url: str) -> Tuple[Union[str, None], Union[str, No
                 return platform, entity_type, entity_class
     return None, None, None
 
+def get_platform_credentials(platform: str) -> Dict[str, str]:
+    if platform == "Spotify":
+        keys = ["client_id", "client_secret", "redirect_uri"]
+        return {f"{platform}_{key}": st.secrets[platform][key] for key in keys}
+    return {}
+
 def display_url(url: str) -> Union[BytesIO, Tuple[int, dict]]:
     """
     Main function to display the appropriate entity based on the platform and type.
@@ -64,7 +70,7 @@ def display_url(url: str) -> Union[BytesIO, Tuple[int, dict]]:
 
                 # Initialize the entity object in the session state if not already present
                 if "entity" not in st.session_state["urls"][url]:
-                    st.session_state["urls"][url]["entity"] = entity_class(url=url)
+                    st.session_state["urls"][url]["entity"] = entity_class(url=url, **get_platform_credentials(platform))
 
                 # Create a Display object to display the song or playlist
                 entity = st.session_state["urls"][url]["entity"]

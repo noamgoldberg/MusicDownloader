@@ -14,13 +14,17 @@ from utils.zip_utils import zip_audio_files
 
 load_dotenv()
 
-def authenticate() -> spotipy.Spotify:
+def authenticate_spotify(
+    spotify_client_id: Optional[str] = None,
+    spotify_client_secret: Optional[str] = None,
+    spotify_redirect_uri: Optional[str] = None,
+) -> spotipy.Spotify:
     """Authenticate Spotify API connection"""
     return spotipy.Spotify(
         auth_manager=SpotifyOAuth(
-            client_id=os.getenv("SPOTIFY_CLIENT_ID"),
-            client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
-            redirect_uri=os.getenv("SPOTIFY_REDIRECT_URI"),
+            client_id=spotify_client_id or os.getenv("SPOTIFY_CLIENT_ID"),
+            client_secret=spotify_client_secret or os.getenv("SPOTIFY_CLIENT_SECRET"),
+            redirect_uri=spotify_redirect_uri or os.getenv("SPOTIFY_REDIRECT_URI"),
             scope="playlist-read-private"
         )
     )
@@ -35,10 +39,17 @@ class SpotifySong:
         url: Optional[str] = None,
         song: Optional[str] = None,
         artist: Optional[str] = None,
+        spotify_client_id: Optional[str] = None,
+        spotify_client_secret: Optional[str] = None,
+        spotify_redirect_uri: Optional[str] = None,
     ):
         if not (url or (song and artist)):
             raise Exception(f"{url=}, {song=}, {artist=}: Must provide either URL or Song & Artist to instantiate SpotifySong")
-        self.sp = self.authenticate()
+        self.sp = self.authenticate(
+            spotify_client_id=spotify_client_id,
+            spotify_client_secret=spotify_client_secret,
+            spotify_redirect_uri=spotify_redirect_uri,
+        )
         self._youtube_url = None  # Internal variable to store the YouTube URL
         if url:
             self.spotify_url = url
@@ -64,8 +75,17 @@ class SpotifySong:
     def spotify_track_id(self) -> str:
         return re.search(r"track/([a-zA-Z0-9]+)", self.spotify_url).group(1)
 
-    def authenticate(self) -> spotipy.Spotify:
-        return authenticate()
+    def authenticate(
+        self,
+        spotify_client_id: Optional[str] = None,
+        spotify_client_secret: Optional[str] = None,
+        spotify_redirect_uri: Optional[str] = None,
+    ) -> spotipy.Spotify:
+        return authenticate_spotify(
+            spotify_client_id=spotify_client_id,
+            spotify_client_secret=spotify_client_secret,
+            spotify_redirect_uri=spotify_redirect_uri,
+        )
 
     def get_song_details_from_spotify(self, spotify_url: str) -> tuple:
         """Get song name and artist from Spotify URL."""
@@ -160,8 +180,18 @@ class SpotifyPlaylist:
     URL_FUNC = lambda url: "spotify.com/playlist" in url
     ENTITY_TYPE = "playlist"
     
-    def __init__(self, url: str):
-        self.sp = self.authenticate()
+    def __init__(
+        self,
+        url: str,
+        spotify_client_id: Optional[str] = None,
+        spotify_client_secret: Optional[str] = None,
+        spotify_redirect_uri: Optional[str] = None,
+    ):
+        self.sp = self.authenticate(
+            spotify_client_id=spotify_client_id,
+            spotify_client_secret=spotify_client_secret,
+            spotify_redirect_uri=spotify_redirect_uri,
+        )
         self.url = url
         self.spotipy_playlist = self.sp.playlist(self.playlist_id)
         self.title = self.get_title()
@@ -176,9 +206,18 @@ class SpotifyPlaylist:
         self.entity_type = SpotifyPlaylist.ENTITY_TYPE
         self.download_from = "YouTube"
     
-    def authenticate(self) -> spotipy.Spotify:
-        return authenticate()
-
+    def authenticate(
+        self,
+        spotify_client_id: Optional[str] = None,
+        spotify_client_secret: Optional[str] = None,
+        spotify_redirect_uri: Optional[str] = None,
+    ) -> spotipy.Spotify:
+        return authenticate_spotify(
+            spotify_client_id=spotify_client_id,
+            spotify_client_secret=spotify_client_secret,
+            spotify_redirect_uri=spotify_redirect_uri,
+        )
+        
     @property
     def playlist_id(self) -> str:
         return self.url.split('/playlist/')[1].split('?')[0]

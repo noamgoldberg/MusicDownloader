@@ -1,8 +1,8 @@
-# core/display/display.py
-
 from typing import Union, List, Dict, Any
+
 from core.display.song import SongDisplay
 from core.display.playlist import PlaylistDisplay
+
 
 class Display:
     
