@@ -23,6 +23,7 @@ CORRECTED_FILE_FILEPATH = os.path.join(
 )
 
 def is_pytube_patched():
+    print(f"INCORRECT FILE FILEPATH: {INCORRECT_FILE_FILEPATH}")
     with open(INCORRECT_FILE_FILEPATH, "r") as f:
         file_content = f.read()
     return "patch" in file_content
