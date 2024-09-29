@@ -1,4 +1,5 @@
 from typing import List, Dict, Optional, Literal
+import time
 import os
 from io import BytesIO
 import re
@@ -10,10 +11,13 @@ from utils.zip_utils import zip_audio_files
 
 
 if not is_pytube_patched():
-    raise AssertionError(
-        f"Must run {PATCH_SCRIPT_FILEPATH} patch script before using pytube-based "
-        f"custom YouTube classes: `python {PATCH_SCRIPT_FILEPATH}`"
-    )
+    os.system("python patch/pytube_patch.py")
+    time.sleep(3)
+    if not is_pytube_patched():
+        raise AssertionError(
+            f"Must run {PATCH_SCRIPT_FILEPATH} patch script before using pytube-based "
+            f"custom YouTube classes: `python {PATCH_SCRIPT_FILEPATH}`"
+        )
     
 class YouTubeVideo(YouTube):
     
