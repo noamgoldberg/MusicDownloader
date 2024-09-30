@@ -41,7 +41,8 @@ def get_entity_class_from_url(url: str) -> Tuple[Union[str, None], Union[str, No
     return None, None, None
 
 def get_platform_credentials(platform: str) -> Dict[str, str]:
-    if platform == "Spotify":
+    platform = platform.lower()
+    if platform == "spotify":
         keys = ["client_id", "client_secret", "redirect_uri"]
         return {f"{platform}_{key}": st.secrets[platform][key] for key in keys}
     return {}
