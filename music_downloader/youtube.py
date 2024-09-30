@@ -29,7 +29,7 @@ class YouTubeVideo(YouTube):
         super().__init__(url)
         self.artist = self.author
         self.url = self.watch_url
-        self._title = self._format_song_title(self.title)
+        self.title = self._format_song_title(self.title)
         self._audio_stream = None
         self._audio = None
         self.entity_type = YouTubeVideo.ENTITY_TYPE
