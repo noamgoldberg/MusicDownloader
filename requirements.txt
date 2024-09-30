@@ -2,7 +2,7 @@ pandas
 spotipy
 streamlit==1.35.0
 selenium
-pytube
+pytube==15.0.0
 yt_dlp
 python-dotenv
 yt_dlp
