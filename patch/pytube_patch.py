@@ -21,6 +21,8 @@ else:
 # Define the path to the incorrect and corrected files
 INCORRECT_FILE_FILEPATH = os.path.join(PYTUBE_PACKAGE_DIR, 'cipher.py')
 CORRECTED_FILE_FILEPATH = os.path.join(Path(PATCH_SCRIPT_FILEPATH).parent, 'cipher.py')
+print("INCORRECT_FILE_FILEPATH:", INCORRECT_FILE_FILEPATH)
+print("CORRECTED_FILE_FILEPATH:", CORRECTED_FILE_FILEPATH)
 
 def is_pytube_patched():
     print(f"PYTUBE_PACKAGE_DIR: {PYTUBE_PACKAGE_DIR}")
@@ -28,7 +30,6 @@ def is_pytube_patched():
     print(f"INCORRECT FILE FILEPATH: {INCORRECT_FILE_FILEPATH}")
     with open(INCORRECT_FILE_FILEPATH, "r") as f:
         file_content = f.read()
-    print(file_content)
     return "patch" in file_content
 
 def patch():

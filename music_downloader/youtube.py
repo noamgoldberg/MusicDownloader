@@ -3,21 +3,22 @@ import time
 import os
 from io import BytesIO
 import re
-from pytube import YouTube, Playlist, Stream
 from stqdm import stqdm as st_tqdm
 
-from patch.pytube_patch import PATCH_SCRIPT_FILEPATH, is_pytube_patched
+from patch.pytube_patch_oo import pytube
+from pytube import YouTube, Playlist, Stream
+# from patch.pytube_patch import PATCH_SCRIPT_FILEPATH, is_pytube_patched
 from utils.zip_utils import zip_audio_files
 
 
-if not is_pytube_patched():
-    os.system("python patch/pytube_patch.py")
-    time.sleep(3)
-    if not is_pytube_patched():
-        raise AssertionError(
-            f"Must run {PATCH_SCRIPT_FILEPATH} patch script before using pytube-based "
-            f"custom YouTube classes: `python {PATCH_SCRIPT_FILEPATH}`"
-        )
+# if not is_pytube_patched():
+#     os.system("python patch/pytube_patch.py")
+#     time.sleep(3)
+#     if not is_pytube_patched():
+#         raise AssertionError(
+#             f"Must run {PATCH_SCRIPT_FILEPATH} patch script before using pytube-based "
+#             f"custom YouTube classes: `python {PATCH_SCRIPT_FILEPATH}`"
+#         )
     
 class YouTubeVideo(YouTube):
     
