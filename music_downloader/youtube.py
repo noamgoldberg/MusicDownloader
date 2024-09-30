@@ -35,7 +35,6 @@ class YouTubeVideo(YouTube):
         self.entity_type = YouTubeVideo.ENTITY_TYPE
         self.platform = "YouTube"
         self.download_from = "YouTube"
-        self.current_batch_size = None
 
     def _format_song_title(self, title: str) -> str:
         if ' - ' not in title:
@@ -105,6 +104,7 @@ class YouTubePlaylist(Playlist):
         self.entity_type = YouTubePlaylist.ENTITY_TYPE
         self.platform = "YouTube"
         self.download_from = "YouTube"
+        self.current_batch_size = None
 
     @property
     def videos(self):
