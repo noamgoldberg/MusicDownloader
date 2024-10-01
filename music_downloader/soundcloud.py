@@ -1,19 +1,17 @@
-from typing import List, Union, Dict, Optional, Literal
-import time
+from typing import List, Union, Dict, Optional
 import os
 from io import BytesIO
 from stqdm import stqdm as st_tqdm
 import yt_dlp
+from utils.selenium_utils import get_driver
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException
 import re
 import tempfile
+import streamlit as st
 
-from utils.selenium_utils import try_find_element, try_find_elements, click_element, click_element_close_model
+from utils.selenium_utils import try_find_element, try_find_elements, click_element_close_model
 from utils.zip_utils import zip_audio_files
 
 
@@ -21,6 +19,20 @@ def is_soundcloud_playlist(url: str) -> bool:
     # Regex to match 'sets' in the second part of the path after the artist name
     pattern = r"soundcloud\.com\/[^\/]+\/sets\/[^\/]+"
     return bool(re.search(pattern, url))
+
+@st.cache_resource
+def get_driver(
+    headless: bool = True,
+    disable_gpu: bool = True,
+    no_sandbox: bool = True,
+    disable_dev_shm_usage: bool = True,
+) -> webdriver.Chrome:
+    return get_driver(
+        headless=headless,
+        disable_gpu=disable_gpu,
+        no_sandbox=no_sandbox,
+        disable_dev_shm_usage=disable_dev_shm_usage,
+    )
 
 class SoundCloudSong:
     
@@ -38,6 +50,7 @@ class SoundCloudSong:
         self.platform = "SoundCloud"
         self.entity_type = SoundCloudSong.ENTITY_TYPE
         self.download_from = self.platform
+        self.get_driver = get_driver
 
     @staticmethod
     def _get_embed_url(driver: webdriver.Chrome) -> Union[str, None]:
@@ -54,14 +67,14 @@ class SoundCloudSong:
                 embed_urls = list(set([url for url in embed_urls if "api.soundcloud" in url]))
                 if len(embed_urls) == 1:
                     return embed_urls[0]
-                
+      
     def scrape_song_info(self) -> Dict[str, Union[str, None]]:
-        options = Options()
-        options.add_argument('--headless')
-        options.add_argument('--disable-gpu')  # Optional, may be necessary in some environments
-        options.add_argument('--no-sandbox')  # Optional, helpful in some environments
-        options.add_argument('--disable-dev-shm-usage')  # Optional, for better performance
-        driver = webdriver.Chrome(options=options) 
+        driver = self.get_driver(
+            headless=True,
+            disable_gpu=True,
+            no_sandbox=True,
+            disable_dev_shm_usage=True,
+        )
         driver.get(self.url)
         info = {}
         for var_name, css_elem in [("song", "h1"), ("artist", "h2")]:
@@ -171,14 +184,15 @@ class SoundCloudPlaylist:
         self.download_from = self.platform
         self.embed_url = None
         self.current_batch_size = None
+        self.get_driver = get_driver
 
     def scrape_playlist_info(self):
-        options = Options()
-        options.add_argument('--headless')
-        options.add_argument('--disable-gpu')  # Optional, may be necessary in some environments
-        options.add_argument('--no-sandbox')  # Optional, helpful in some environments
-        options.add_argument('--disable-dev-shm-usage')  # Optional, for better performance
-        driver = webdriver.Chrome(options=options)
+        driver = self.get_driver(
+            headless=True,
+            disable_gpu=True,
+            no_sandbox=True,
+            disable_dev_shm_usage=True,
+        )
         driver.get(self.url)  # Replace with your target URL
         titles_text = try_find_elements(driver, by=By.CLASS_NAME, value="soundTitle", wait=True, timeout=10)
         if titles_text is None:

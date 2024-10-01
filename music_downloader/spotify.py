@@ -1,4 +1,4 @@
-from typing import Optional, Union, Tuple, List, Literal
+from typing import Optional, Union, Tuple, List
 import os
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth

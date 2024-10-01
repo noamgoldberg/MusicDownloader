@@ -47,6 +47,13 @@ def get_platform_credentials(platform: str) -> Dict[str, str]:
         return {f"{platform}_{key}": st.secrets[platform][key] for key in keys}
     return {}
 
+def apply_st_cache_selenium_driver(entity: str) -> None:
+    if hasattr(entity, "get_driver"):
+        print(entity.platform)
+        def get_driver_cached():
+            return
+        entity.get_driver = get_driver_cached
+
 def display_url(url: str) -> Union[BytesIO, Tuple[int, dict]]:
     """
     Main function to display the appropriate entity based on the platform and type.
@@ -72,9 +79,12 @@ def display_url(url: str) -> Union[BytesIO, Tuple[int, dict]]:
                 # Initialize the entity object in the session state if not already present
                 if "entity" not in st.session_state["urls"][url]:
                     st.session_state["urls"][url]["entity"] = entity_class(url=url, **get_platform_credentials(platform))
-
-                # Create a Display object to display the song or playlist
                 entity = st.session_state["urls"][url]["entity"]
+                
+                # Add st.cache to get_driver Selenium method of entity
+                apply_st_cache_selenium_driver(entity)
+                
+                # Create a Display object to display the song or playlist
                 display_func = Display(entity).display
 
                 # Call the display method, which returns the number of songs and download kwargs
@@ -82,6 +92,7 @@ def display_url(url: str) -> Union[BytesIO, Tuple[int, dict]]:
                 num_songs = url_results["num_songs"]
                 download_kwargs = url_results["download_kwargs"]
                 return num_songs, download_kwargs
+            
             else:
                 st.error(f"Invalid URL and/or unsupported platform: {url}")
                 return None, {}
