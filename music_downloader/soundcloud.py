@@ -42,6 +42,7 @@ class SoundCloudSong:
     def __init__(self, url: str):
         self.url = url.strip()
         self._song_info = None
+        self.get_driver = get_driver
         self._title = None
         self._artist = None
         self._embed_url = None
@@ -50,7 +51,6 @@ class SoundCloudSong:
         self.platform = "SoundCloud"
         self.entity_type = SoundCloudSong.ENTITY_TYPE
         self.download_from = self.platform
-        self.get_driver = get_driver
 
     @staticmethod
     def _get_embed_url(driver: webdriver.Chrome) -> Union[str, None]:
