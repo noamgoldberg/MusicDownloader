@@ -6,7 +6,11 @@ from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    ElementClickInterceptedException,
+    TimeoutException
+)
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import WebElement
@@ -113,10 +117,22 @@ def click_element(elem: WebElement, sleep: int = 1):
     elem.click()
     time.sleep(sleep)
 
-def click_element_close_model(driver: webdriver.Chrome, elem: WebElement, sleep: int = 1):
+def click_element_close_model(
+    driver: webdriver.Chrome,
+    elem: WebElement,
+    wait: bool,
+    timeout: int = 5,
+    sleep: int = 1
+):
+    if wait:
+        elem = WebDriverWait(driver, timeout).until(EC.element_to_be_clickable(elem))
     try:
         click_element(elem, sleep)
-    except :
-        body = driver.find_element(By.TAG_NAME, "body")
-        body.send_keys(Keys.ESCAPE)
-        click_element(elem, sleep)
+    except:
+        try:
+            body = driver.find_element(By.TAG_NAME, "body")
+            body.send_keys(Keys.ESCAPE)
+            click_element(elem, sleep)
+        except:
+            print("Failed to click button")
+        
