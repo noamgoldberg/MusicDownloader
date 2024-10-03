@@ -1,0 +1,1 @@
+web: apt-get install -y chromium-browser; streamlit run app.py
