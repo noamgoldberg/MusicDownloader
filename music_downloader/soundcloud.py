@@ -8,9 +8,8 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import StaleElementReferenceException
 import re
 import tempfile
-import streamlit as st
 
-from utils.selenium_utils import try_find_element, try_find_elements, click_element_close_model
+from utils.selenium_utils import get_driver, try_find_element, try_find_elements, click_element_close_model
 from utils.zip_utils import zip_audio_files
 
 
@@ -18,21 +17,6 @@ def is_soundcloud_playlist(url: str) -> bool:
     # Regex to match 'sets' in the second part of the path after the artist name
     pattern = r"soundcloud\.com\/[^\/]+\/sets\/[^\/]+"
     return bool(re.search(pattern, url))
-
-# @st.cache_resource
-def get_driver(
-    headless: bool = True,
-    disable_gpu: bool = True,
-    no_sandbox: bool = True,
-    disable_dev_shm_usage: bool = True,
-) -> webdriver.Chrome:
-    from utils.selenium_utils import get_driver as _get_driver
-    return _get_driver(
-        headless=headless,
-        disable_gpu=disable_gpu,
-        no_sandbox=no_sandbox,
-        disable_dev_shm_usage=disable_dev_shm_usage,
-    )
 
 class SoundCloudSong:
     
