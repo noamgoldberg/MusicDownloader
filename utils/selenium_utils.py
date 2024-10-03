@@ -117,10 +117,10 @@ def click_element(elem: WebElement, sleep: int = 1):
     elem.click()
     time.sleep(sleep)
 
-def click_element_close_model(
+def click_element_close_modal(
     driver: webdriver.Chrome,
     elem: WebElement,
-    wait: bool,
+    wait: bool = True,
     timeout: int = 5,
     sleep: int = 1
 ):

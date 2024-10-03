@@ -9,7 +9,7 @@ from selenium.common.exceptions import StaleElementReferenceException
 import re
 import tempfile
 
-from utils.selenium_utils import get_driver, try_find_element, try_find_elements, click_element_close_model
+from utils.selenium_utils import get_driver, try_find_element, try_find_elements, click_element_close_modal
 from utils.zip_utils import zip_audio_files
 
 
@@ -40,10 +40,10 @@ class SoundCloudSong:
     def _get_embed_url(driver: webdriver.Chrome) -> Union[str, None]:
         share_button = try_find_element(driver, By.CSS_SELECTOR, 'button[title="Share"]')
         if share_button is not None:
-            click_element_close_model(driver, share_button, sleep=2)
+            click_element_close_modal(driver, share_button, wait=True, timeout=5, sleep=2)
             embed_tab = try_find_element(driver, By.LINK_TEXT, 'Embed')
             if embed_tab is not None:
-                click_element_close_model(driver, embed_tab, sleep=2)
+                click_element_close_modal(driver, embed_tab, wait=True, timeout=5, sleep=2)
                 iframes = try_find_elements(driver, by=By.CSS_SELECTOR, value="iframe", wait=True, timeout=10)
                 embed_urls = [i.get_attribute("src") for i in iframes]
                 embed_urls = list(set([url for url in embed_urls if "api.soundcloud" in url]))
