@@ -31,9 +31,8 @@ def get_driver(
         options.add_argument('--no-sandbox')
     if disable_dev_shm_usage:
         options.add_argument('--disable-dev-shm-usage')
-
     chromedriver_install_path = ChromeDriverManager(
-        # chrome_type=ChromeType.CHROMIUM
+        chrome_type=ChromeType.CHROMIUM
     ).install()
 
     chromedriver_path = str(Path(chromedriver_install_path).parent / "chromedriver")
