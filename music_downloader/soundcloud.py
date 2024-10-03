@@ -3,7 +3,6 @@ import os
 from io import BytesIO
 from stqdm import stqdm as st_tqdm
 import yt_dlp
-from utils.selenium_utils import get_driver
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import StaleElementReferenceException
@@ -20,14 +19,15 @@ def is_soundcloud_playlist(url: str) -> bool:
     pattern = r"soundcloud\.com\/[^\/]+\/sets\/[^\/]+"
     return bool(re.search(pattern, url))
 
-@st.cache_resource
+# @st.cache_resource
 def get_driver(
     headless: bool = True,
     disable_gpu: bool = True,
     no_sandbox: bool = True,
     disable_dev_shm_usage: bool = True,
 ) -> webdriver.Chrome:
-    return get_driver(
+    from utils.selenium_utils import get_driver as _get_driver
+    return _get_driver(
         headless=headless,
         disable_gpu=disable_gpu,
         no_sandbox=no_sandbox,
@@ -56,11 +56,9 @@ class SoundCloudSong:
     def _get_embed_url(driver: webdriver.Chrome) -> Union[str, None]:
         share_button = try_find_element(driver, By.CSS_SELECTOR, 'button[title="Share"]')
         if share_button is not None:
-            # click_element(share_button, sleep=2)
             click_element_close_model(driver, share_button, sleep=2)
             embed_tab = try_find_element(driver, By.LINK_TEXT, 'Embed')
             if embed_tab is not None:
-                # click_element(embed_tab, sleep=2)
                 click_element_close_model(driver, embed_tab, sleep=2)
                 iframes = try_find_elements(driver, by=By.CSS_SELECTOR, value="iframe", wait=True, timeout=10)
                 embed_urls = [i.get_attribute("src") for i in iframes]

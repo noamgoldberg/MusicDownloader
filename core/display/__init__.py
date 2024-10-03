@@ -1,8 +1,11 @@
 from typing import Union, Tuple, Dict
+import os
 import streamlit as st
+from streamlit.runtime.secrets import SECRETS_FILE_LOCS
 from io import BytesIO
 import yt_dlp
 from spotipy.exceptions import SpotifyException
+from copy import deepcopy
 
 from music_downloader.youtube import YouTubeVideo, YouTubePlaylist
 from music_downloader.spotify import SpotifySong, SpotifyPlaylist
@@ -41,17 +44,23 @@ def get_entity_class_from_url(url: str) -> Tuple[Union[str, None], Union[str, No
     return None, None, None
 
 def get_platform_credentials(platform: str) -> Dict[str, str]:
-    platform = platform.lower()
-    if platform == "spotify":
-        keys = ["client_id", "client_secret", "redirect_uri"]
-        return {f"{platform}_{key}": st.secrets[platform][key] for key in keys}
+    if any([os.path.exists(path) for path in SECRETS_FILE_LOCS]):
+        platform = platform.lower()
+        if platform == "spotify":
+            keys = ["client_id", "client_secret", "redirect_uri"]
+            return {f"{platform}_{key}": st.secrets[platform][key] for key in keys}
     return {}
 
-def apply_st_cache_selenium_driver(entity: str) -> None:
+def apply_st_cache_selenium_driver(entity: Union[
+    YouTubeVideo, YouTubePlaylist,
+    SpotifySong, SpotifyPlaylist,
+    SoundCloudSong, SoundCloudPlaylist
+]) -> None:
     if hasattr(entity, "get_driver"):
-        print(entity.platform)
-        def get_driver_cached():
-            return
+        @st.cache_resource
+        def get_driver_cached(*args, **kwargs):
+            func = deepcopy(entity.get_driver)
+            return func(*args, **kwargs)
         entity.get_driver = get_driver_cached
 
 def display_url(url: str) -> Union[BytesIO, Tuple[int, dict]]:
