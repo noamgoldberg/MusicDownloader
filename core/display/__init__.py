@@ -56,12 +56,13 @@ def apply_st_cache_selenium_driver(entity: Union[
     SpotifySong, SpotifyPlaylist,
     SoundCloudSong, SoundCloudPlaylist
 ]) -> None:
-    if hasattr(entity, "get_driver"):
-        @st.cache_resource
-        def get_driver_cached(*args, **kwargs):
-            func = deepcopy(entity.get_driver)
-            return func(*args, **kwargs)
-        entity.get_driver = get_driver_cached
+    pass
+    # if hasattr(entity, "get_driver"):
+        # @st.cache_resource
+        # def get_driver_cached(*args, **kwargs):
+        #     func = deepcopy(entity.get_driver)
+        #     return func(*args, **kwargs)
+        # entity.get_driver = get_driver_cached
 
 def display_url(url: str) -> Union[BytesIO, Tuple[int, dict]]:
     """

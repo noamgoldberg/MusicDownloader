@@ -5,6 +5,6 @@ selenium
 pytube==15.0.0
 yt_dlp
 python-dotenv
-yt_dlp
 youtube-search-python
 stqdm
+webdriver-manager==4.0.2
