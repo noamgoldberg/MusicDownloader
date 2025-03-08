@@ -211,7 +211,7 @@ class SpotifyPlaylist:
     def get_filename(self) -> str:
         """Generate a filename for the playlist zip file."""
         playlist_title = self.sp.playlist(self.url.split('/playlist/')[1].split('?')[0])['name']
-        return f"{playlist_title.replace(' ', '_')}.zip"
+        return f"{playlist_title}.zip"
 
     def download_audio(
         self,

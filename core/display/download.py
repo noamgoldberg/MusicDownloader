@@ -67,7 +67,7 @@ def display_download_buttons(
         download_kwargs = [download_kwargs]
     def _display_download_button():
         if len(download_kwargs) > 1:
-            all_data = {kwargs["file_name"]: kwargs["data"] for kwargs in download_kwargs}
+            all_data = {kwargs["file_name"].replace('_', ' '): kwargs["data"] for kwargs in download_kwargs}
             all_songs_zip = zip_audio_files(all_data, stqdm=True, batch_size=None)
             filename = Path(download_kwargs[0]["file_name"]).stem.split('-')[0].strip()
             filename += f' - All Songs (Batches of {batch_size}).zip'
