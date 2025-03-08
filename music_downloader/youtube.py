@@ -40,6 +40,10 @@ class YouTubeVideo:
         return self._title
 
     @property
+    def embed_url(self) -> str:
+        return f"https://www.youtube.com/embed/{self.info.get('id', '')}"
+
+    @property
     def filename(self) -> str:
         return f"{self._title}.mp3"
 
@@ -135,7 +139,7 @@ class YouTubePlaylist:
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             for video in self.videos:
                 audio_data = video.audio.getvalue()  # Directly get the audio data in memory
-                zip_file.writestr(video.filename, audio_data)
+                zip_file.writestr(video.filename.replace('_', ' '), audio_data)
         zip_buffer.seek(0)  # Ensure the memory pointer is at the beginning before returning
         self.audio_zipped = zip_buffer
         return self.audio_zipped

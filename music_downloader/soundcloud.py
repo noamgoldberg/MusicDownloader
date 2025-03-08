@@ -1,5 +1,7 @@
 from typing import List, Union, Dict, Optional, Literal
+import re
 import time
+import tempfile
 import os
 from io import BytesIO
 from stqdm import stqdm as st_tqdm
@@ -10,8 +12,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException
-import re
-import tempfile
+from webdriver_manager.chrome import ChromeDriverManager
 
 from utils.selenium_utils import try_find_element, try_find_elements, click_element, click_element_close_model
 from utils.zip_utils import zip_audio_files
@@ -61,7 +62,7 @@ class SoundCloudSong:
         options.add_argument('--disable-gpu')  # Optional, may be necessary in some environments
         options.add_argument('--no-sandbox')  # Optional, helpful in some environments
         options.add_argument('--disable-dev-shm-usage')  # Optional, for better performance
-        driver = webdriver.Chrome(options=options) 
+        driver = webdriver.Chrome(service=ChromeDriverManager().install(), options=options) 
         driver.get(self.url)
         info = {}
         for var_name, css_elem in [("song", "h1"), ("artist", "h2")]:

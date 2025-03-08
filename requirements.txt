@@ -1,4 +1,4 @@
-pandas==2.2.3
+pandas==2.0.3
 pytube==15.0.0
 spotipy==2.24.0
 stqdm==0.0.5
@@ -7,3 +7,5 @@ selenium
 youtube-search-python
 yt-dlp==2024.9.27
 streamlit==1.40.1
+webdriver-manager
+httpx<0.28
