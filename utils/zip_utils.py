@@ -63,7 +63,9 @@ def _zip_audio_batch(
                 if stqdm:
                     items.set_description(f"{i + 1} / {len(songs)} Zipping Zipped Files: {Path(item).stem}")
                 data = songs[item]
-                safe_filename = f"{item}".replace(' ', '_').replace('/', '_').replace('\\', '_')
+                safe_filename = f"{item}" \
+                    .replace(' / ', ' - ').replace(' /', ' -').replace('/ ', '- ') \
+                    .replace(' \\ ', ' - ').replace(' \\', ' -').replace('\\ ', '- ')
             else:
                 if stqdm:
                     actions_str = "Downloading & Zipping" if not item._audio else "Zipping"
