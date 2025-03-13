@@ -35,10 +35,10 @@ def initialize_driver(
 ) -> webdriver.Chrome:
     options = Options()
     options_args = {
-        "--headless=new": headless,
+        "--headless": headless,
         "--disable-gpu": disable_gpu,
-        # "--no-sandbox": no_sandbox,
-        # "--disable-dev-shm-usage": disable_dev_shm_usage,
+        "--no-sandbox": no_sandbox,
+        "--disable-dev-shm-usage": disable_dev_shm_usage,
     }
     for flag, value in options_args.items():
         if value:
