@@ -7,6 +7,9 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
 
 
 def _wait_for_elements(
@@ -66,14 +69,14 @@ def try_find_elements(
         timeout=timeout
     )
 
-def click_element(elem: WebElement, sleep: int = 1):
-    elem.click()
+def click_element(driver: webdriver.Chrome, elem: WebElement, wait: int = 20, sleep: int = 1):
+    WebDriverWait(driver, wait).until(EC.element_to_be_clickable(elem)).click()
     time.sleep(sleep)
 
-def click_element_close_model(driver: webdriver.Chrome, elem: WebElement, sleep: int = 1):
+def click_element_close_model(driver: webdriver.Chrome, elem: WebElement, wait: int = 20, sleep: int = 1):
     try:
-        click_element(elem, sleep)
+        click_element(driver, elem, sleep=sleep, wait=wait)
     except:
         body = driver.find_element(By.TAG_NAME, "body")
         body.send_keys(Keys.ESCAPE)
-        click_element(elem, sleep)
+        click_element(driver, elem, wait=wait, sleep=sleep)
