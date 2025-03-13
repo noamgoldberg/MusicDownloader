@@ -10,10 +10,13 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import StaleElementReferenceException
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
 
-from utils.selenium_utils import try_find_element, try_find_elements, click_element, click_element_close_model
+from utils.selenium_utils import (
+    initialize_driver,
+    try_find_element,
+    try_find_elements,
+    click_element_close_model
+)
 from utils.zip_utils import zip_audio_files
 
 
@@ -60,13 +63,12 @@ class SoundCloudSong:
                     return embed_urls[0]
                 
     def scrape_song_info(self) -> Dict[str, Union[str, None]]:
-        options = Options()
-        options.add_argument('--headless')
-        options.add_argument('--disable-gpu')  # Optional, may be necessary in some environments
-        options.add_argument('--no-sandbox')  # Optional, helpful in some environments
-        options.add_argument('--disable-dev-shm-usage')  # Optional, for better performance
-        # driver = webdriver.Chrome(service=ChromeDriverManager().install(), options=options) 
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        driver = initialize_driver(
+            headless=True,
+            disable_gpu=True,
+            no_sandbox=True,
+            disable_dev_shm_usage=True
+        )
         driver.get(self.url)
         info = {}
         for var_name, css_elem in [("song", "h1"), ("artist", "h2")]:
