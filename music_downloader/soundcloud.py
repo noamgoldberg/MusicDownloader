@@ -10,9 +10,11 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import StaleElementReferenceException
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
 
 from utils.selenium_utils import (
-    initialize_driver,
+    # initialize_driver,
     try_find_element,
     try_find_elements,
     click_element_close_model
@@ -24,6 +26,28 @@ def is_soundcloud_playlist(url: str) -> bool:
     # Regex to match 'sets' in the second part of the path after the artist name
     pattern = r"soundcloud\.com\/[^\/]+\/sets\/[^\/]+"
     return bool(re.search(pattern, url))
+
+def initialize_driver(
+    headless: bool = True,
+    disable_gpu: bool = True,
+    no_sandbox: bool = True,
+    disable_dev_shm_usage: bool = True,
+) -> webdriver.Chrome:
+    options = Options()
+    options_args = {
+        "--headless": headless,
+        "--disable-gpu": disable_gpu,
+        "--no-sandbox": no_sandbox,
+        "--disable-dev-shm-usage": disable_dev_shm_usage,
+    }
+    for flag, value in options_args.items():
+        if value:
+            try:
+                options.add_argument(flag)
+            except:
+                pass
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    return driver
 
 class SoundCloudSong:
     
