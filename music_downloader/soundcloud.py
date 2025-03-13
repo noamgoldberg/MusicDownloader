@@ -100,10 +100,11 @@ class SoundCloudSong:
             info[var_name] = value if value is None else value.text
         if info["song"] is None:
             raise Exception(f"Failed to extract song title and artist/username for {self.url}")
-        try:
-            info["embed_url"] = self._get_embed_url(driver)
-        except StaleElementReferenceException:  # retry
-            info["embed_url"] = self._get_embed_url(driver)
+        info["embed_url"] = None
+        # try:
+        #     info["embed_url"] = self._get_embed_url(driver)
+        # except StaleElementReferenceException:  # retry
+        #     info["embed_url"] = self._get_embed_url(driver)
         driver.quit()
         return info
 
