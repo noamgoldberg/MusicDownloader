@@ -45,12 +45,9 @@ class SongDisplay:
     def display(self) -> Dict[str, Any]:
         """Displays song and handles download."""
         entity = self.entity
+        url, embed_url_1, embed_url_2 = entity.url, entity.embed_url, None
         if entity.platform == "Spotify":
-            url = entity.spotify_url
-            embed_url_1 = getattr(entity, 'spotify_embed_url', None)
             embed_url_2 = getattr(entity, 'youtube_embed_url', None)
-        else:
-            url, embed_url_1, embed_url_2 = entity.url, entity.embed_url, None
         columns = self.display_song_details(url, embed_url_1, embed_url_2)
         with st.spinner(f"Downloading Audio for {entity.title}..."):
             buffer = entity.download_audio()

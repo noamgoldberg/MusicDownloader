@@ -20,12 +20,12 @@ class BaseSong(ABC):
     def get_platform(self) -> str:
         pass
 
+    def get_download_platform(self) -> str:
+        return self.platform
+
     @abstractmethod
     def is_url_valid(self) -> bool:
         pass
-
-    def get_download_platform(self) -> str:
-        return self.platform
 
     @abstractmethod
     def scrape_song_info(self) -> Dict[str, Union[str, None]]:
