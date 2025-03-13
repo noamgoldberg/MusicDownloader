@@ -8,5 +8,5 @@ selenium
 youtube-search-python
 yt-dlp==2024.9.27
 streamlit==1.40.1
-webdriver-manager
+webdriver-manager==4.0.2
 httpx<0.28
