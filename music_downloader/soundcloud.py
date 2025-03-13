@@ -46,7 +46,7 @@ def initialize_driver(
                 options.add_argument(flag)
             except:
                 pass
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver = webdriver.Chrome(options=options)
     return driver
 
 class SoundCloudSong:
