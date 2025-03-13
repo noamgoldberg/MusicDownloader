@@ -1,6 +1,6 @@
-from typing import List, Union, Dict, Optional, Literal
-import re
+from typing import List, Union, Dict, Optional
 import time
+import re
 import tempfile
 import os
 from io import BytesIO
@@ -9,10 +9,9 @@ import yt_dlp
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
 
 from utils.selenium_utils import try_find_element, try_find_elements, click_element, click_element_close_model
 from utils.zip_utils import zip_audio_files
@@ -34,21 +33,25 @@ class SoundCloudSong:
         self._title = None
         self._artist = None
         self._embed_url = None
-        self.filename = f"{self.title} by {self.artist}.mp3"
         self._audio = None
         self.platform = "SoundCloud"
         self.entity_type = SoundCloudSong.ENTITY_TYPE
         self.download_from = self.platform
 
+    @property
+    def filename(self) -> str:
+        title = self.title.replace(' /', ' -').replace('/ ', '- ').replace('/', '-')
+        return f"{title} by {self.artist}.mp3"
+
     @staticmethod
     def _get_embed_url(driver: webdriver.Chrome) -> Union[str, None]:
         share_button = try_find_element(driver, By.CSS_SELECTOR, 'button[title="Share"]')
         if share_button is not None:
-            # click_element(share_button, sleep=2)
+            time.sleep(1)
             click_element_close_model(driver, share_button, sleep=2)
-            embed_tab = try_find_element(driver, By.LINK_TEXT, 'Embed')
+            embed_tab = try_find_element(driver, By.LINK_TEXT, 'Embed', timeout=20)
             if embed_tab is not None:
-                # click_element(embed_tab, sleep=2)
+                time.sleep(1)
                 click_element_close_model(driver, embed_tab, sleep=2)
                 iframes = try_find_elements(driver, by=By.CSS_SELECTOR, value="iframe", wait=True, timeout=10)
                 embed_urls = [i.get_attribute("src") for i in iframes]
@@ -62,7 +65,8 @@ class SoundCloudSong:
         options.add_argument('--disable-gpu')  # Optional, may be necessary in some environments
         options.add_argument('--no-sandbox')  # Optional, helpful in some environments
         options.add_argument('--disable-dev-shm-usage')  # Optional, for better performance
-        driver = webdriver.Chrome(service=ChromeDriverManager().install(), options=options) 
+        # driver = webdriver.Chrome(service=ChromeDriverManager().install(), options=options) 
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         driver.get(self.url)
         info = {}
         for var_name, css_elem in [("song", "h1"), ("artist", "h2")]:

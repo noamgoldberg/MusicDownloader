@@ -73,7 +73,7 @@ def click_element(elem: WebElement, sleep: int = 1):
 def click_element_close_model(driver: webdriver.Chrome, elem: WebElement, sleep: int = 1):
     try:
         click_element(elem, sleep)
-    except :
+    except:
         body = driver.find_element(By.TAG_NAME, "body")
         body.send_keys(Keys.ESCAPE)
         click_element(elem, sleep)
