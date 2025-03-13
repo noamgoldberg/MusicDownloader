@@ -180,12 +180,12 @@ class SoundCloudPlaylist:
         self.current_batch_size = None
 
     def scrape_playlist_info(self):
-        options = Options()
-        options.add_argument('--headless')
-        options.add_argument('--disable-gpu')  # Optional, may be necessary in some environments
-        options.add_argument('--no-sandbox')  # Optional, helpful in some environments
-        options.add_argument('--disable-dev-shm-usage')  # Optional, for better performance
-        driver = webdriver.Chrome(options=options)
+        driver = initialize_driver(
+            headless=True,
+            disable_gpu=True,
+            no_sandbox=True,
+            disable_dev_shm_usage=True
+        )
         driver.get(self.url)  # Replace with your target URL
         titles_text = try_find_elements(driver, by=By.CLASS_NAME, value="soundTitle", wait=True, timeout=10)
         if titles_text is None:
