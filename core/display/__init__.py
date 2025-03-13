@@ -36,7 +36,7 @@ def get_entity_class_from_url(url: str) -> Tuple[Union[str, None], Union[str, No
     """
     for platform, platform_dict in ENTITY_CLASSES.items():
         for entity_type, entity_class in platform_dict.items():
-            if entity_class.URL_FUNC(url):  # Assumes URL_FUNC checks if the URL matches the entity's platform
+            if entity_class.is_url_valid(url):  # Assumes URL_FUNC checks if the URL matches the entity's platform
                 return platform, entity_type, entity_class
     return None, None, None
 

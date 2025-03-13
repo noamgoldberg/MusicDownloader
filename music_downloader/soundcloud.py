@@ -9,10 +9,8 @@ import yt_dlp
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import StaleElementReferenceException
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
 
+from music_downloader.base import BaseSong, BasePlaylist
 from utils.selenium_utils import (
     # initialize_driver,
     try_find_element,
@@ -20,12 +18,6 @@ from utils.selenium_utils import (
     click_element_close_model
 )
 from utils.zip_utils import zip_audio_files
-
-
-def is_soundcloud_playlist(url: str) -> bool:
-    # Regex to match 'sets' in the second part of the path after the artist name
-    pattern = r"soundcloud\.com\/[^\/]+\/sets\/[^\/]+"
-    return bool(re.search(pattern, url))
 
 def initialize_driver(
     headless: bool = True,
@@ -49,27 +41,21 @@ def initialize_driver(
     driver = webdriver.Chrome(options=options)
     return driver
 
-class SoundCloudSong:
-    
-    URL_FUNC = lambda url: ("soundcloud.com/" in url) and (not is_soundcloud_playlist(url))
-    ENTITY_TYPE = "song"
+class SoundCloudSong(BaseSong):
     
     def __init__(self, url: str):
-        self.url = url.strip()
-        self._song_info = None
-        self._title = None
-        self._artist = None
-        self._embed_url = None
-        self._audio = None
-        self.platform = "SoundCloud"
-        self.entity_type = SoundCloudSong.ENTITY_TYPE
-        self.download_from = self.platform
+        super().__init__(url)
 
-    @property
-    def filename(self) -> str:
-        title = self.title.replace(' /', ' -').replace('/ ', '- ').replace('/', '-')
-        return f"{title} by {self.artist}.mp3"
+    @staticmethod
+    def get_platform() -> str:
+        return "SoundCloud"
 
+    @staticmethod
+    def is_url_valid(url: str) -> bool:
+        if "soundcloud.com/" in url:
+            return not SoundCloudPlaylist.is_url_playlist(url)
+        return False
+    
     @staticmethod
     def _get_embed_url(driver: webdriver.Chrome) -> Union[str, None]:
         share_button = try_find_element(driver, By.CSS_SELECTOR, 'button[title="Share"]')
@@ -108,36 +94,6 @@ class SoundCloudSong:
         driver.quit()
         return info
 
-    @property
-    def song_info(self) -> Dict[str, str]:
-        if self._song_info is None:
-            self._song_info = self.scrape_song_info()
-        return self._song_info
-
-    @property
-    def title(self) -> str:
-        return self.song_info["song"]
-
-    @property
-    def artist(self) -> str:
-        return self.song_info["artist"]
-
-    @property
-    def embed_url(self) -> str:
-        return self.song_info["embed_url"]
-
-    @property
-    def audio(self) -> BytesIO:
-        """Returns the cached audio if already downloaded, otherwise downloads it."""
-        return self.download_audio()
-
-    @audio.setter
-    def audio(self, buffer: BytesIO):
-        """Validates and sets the audio buffer."""
-        if not isinstance(buffer, BytesIO):
-            raise TypeError(f"Invalid type for 'audio' property; expected BytesIO, got {type(buffer).__name__}")
-        self._audio = buffer
-
     def _download_audio(self, verbose: int = 0) -> bytes:
         """Downloads the audio and caches it in memory."""
         buffer = BytesIO()
@@ -171,23 +127,11 @@ class SoundCloudSong:
         buffer.seek(0)  # Reset the buffer position before returning
         return buffer#.getvalue()  # Return the bytes in the buffer
 
-    def download_audio(
-        self,
-        *,
-        verbose: int = 0
-    ) -> bytes:
-        """Downloads the audio and caches it in the _audio attribute, keeping it in memory."""
-        if self._audio is None:  # Only download if not already cached
-            self._audio = self._download_audio(
-                verbose=verbose
-            )
-        return self._audio
-
 class SoundCloudPlaylist:
     
     URL_FUNC = lambda url: ("soundcloud.com/" in url) and (is_soundcloud_playlist(url))
     ENTITY_TYPE = "playlist"
-    
+
     def __init__(self, url: str):
         self.url = url.strip()
         attrs = self.scrape_playlist_info()
@@ -203,6 +147,18 @@ class SoundCloudPlaylist:
         self.download_from = self.platform
         self.embed_url = None
         self.current_batch_size = None
+
+    @staticmethod
+    def is_url_playlist(url: str) -> bool:
+        # Regex to match 'sets' in the second part of the path after the artist name
+        pattern = r"soundcloud\.com\/[^\/]+\/sets\/[^\/]+"
+        return bool(re.search(pattern, url))
+
+    @classmethod
+    def is_url_valid(cls, url: str) -> bool:
+        if "soundcloud.com/" in url:
+            return cls.is_url_playlist(url)
+        return False
 
     def scrape_playlist_info(self):
         driver = initialize_driver(

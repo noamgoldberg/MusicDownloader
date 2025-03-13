@@ -12,7 +12,6 @@ import yt_dlp
 
 class YouTubeVideo:
     
-    URL_FUNC = lambda url: "youtube.com/watch?" in url
     ENTITY_TYPE = "song"
     
     def __init__(self, url: str):
@@ -24,6 +23,10 @@ class YouTubeVideo:
         self.platform = "YouTube"
         self.download_from = "YouTube"
         self._audio = None
+
+    @staticmethod
+    def is_url_valid(url: str) -> bool:
+        return "youtube.com/watch?" in url
 
     def _get_video_info(self):
         ydl_opts = {"quiet": True, "extract_flat": True}
@@ -102,7 +105,6 @@ class YouTubeVideo:
 
 class YouTubePlaylist:
 
-    URL_FUNC = lambda url: "youtube.com/playlist?" in url
     ENTITY_TYPE = "playlist"
 
     def __init__(self, url: str):
@@ -115,6 +117,10 @@ class YouTubePlaylist:
         self.entity_type = "playlist"
         self.platform = "YouTube"
         self.download_from = "YouTube"
+
+    @staticmethod
+    def is_url_valid(url: str) -> bool:
+        return "youtube.com/playlist?" in url
 
     def _get_playlist_videos(self) -> List[str]:
         ydl_opts = {"quiet": True, "extract_flat": True}

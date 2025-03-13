@@ -27,7 +27,6 @@ def authenticate() -> spotipy.Spotify:
 
 class SpotifySong:
     
-    URL_FUNC = lambda url: "spotify.com/track" in url
     ENTITY_TYPE = "song"
     
     def __init__(
@@ -63,6 +62,10 @@ class SpotifySong:
     @property
     def spotify_track_id(self) -> str:
         return re.search(r"track/([a-zA-Z0-9]+)", self.spotify_url).group(1)
+
+    @staticmethod
+    def is_url_valid(url: str) -> bool:
+        return "spotify.com/track" in url
 
     def authenticate(self) -> spotipy.Spotify:
         return authenticate()
@@ -157,7 +160,6 @@ class SpotifySong:
 
 class SpotifyPlaylist:
     
-    URL_FUNC = lambda url: "spotify.com/playlist" in url
     ENTITY_TYPE = "playlist"
     
     def __init__(self, url: str):
@@ -175,7 +177,11 @@ class SpotifyPlaylist:
         self.platform = "Spotify"
         self.entity_type = SpotifyPlaylist.ENTITY_TYPE
         self.download_from = "YouTube"
-    
+        
+    @staticmethod
+    def is_url_valid(url: str) -> bool:
+        return "spotify.com/playlist" in url
+
     def authenticate(self) -> spotipy.Spotify:
         return authenticate()
 
