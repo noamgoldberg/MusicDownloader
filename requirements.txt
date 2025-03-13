@@ -11,3 +11,4 @@ streamlit==1.40.1
 webdriver-manager==4.0.2
 httpx<0.28
 seleniumbase
+ffmpeg-python
