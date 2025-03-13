@@ -4,7 +4,7 @@ from io import BytesIO
 import yt_dlp
 from spotipy.exceptions import SpotifyException
 
-from music_downloader.youtube import YouTubeVideo, YouTubePlaylist
+from music_downloader.youtube import YouTubeSong, YouTubePlaylist
 from music_downloader.spotify import SpotifySong, SpotifyPlaylist
 from music_downloader.soundcloud import SoundCloudSong, SoundCloudPlaylist
 from core.display.display import Display
@@ -12,7 +12,7 @@ from core.display.display import Display
 
 ENTITY_CLASSES = {
     "YouTube": {
-        "song": YouTubeVideo,
+        "song": YouTubeSong,
         "playlist": YouTubePlaylist,
     },
     "Spotify": {
@@ -32,7 +32,7 @@ def get_entity_class_from_url(url: str) -> Tuple[Union[str, None], Union[str, No
     Returns:
         platform (str): The platform name (YouTube, Spotify, SoundCloud) or None if not found.
         entity_type (str): The entity type ('song' or 'playlist') or None if not found.
-        entity_class (type): The entity class (YouTubeVideo, SpotifySong, etc.) or None if not found.
+        entity_class (type): The entity class (YouTubeSong, SpotifySong, etc.) or None if not found.
     """
     for platform, platform_dict in ENTITY_CLASSES.items():
         for entity_type, entity_class in platform_dict.items():

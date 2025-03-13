@@ -8,9 +8,29 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
 
+
+def initialize_driver(
+    headless: bool = True,
+    disable_gpu: bool = True,
+    no_sandbox: bool = True,
+    disable_dev_shm_usage: bool = True,
+) -> webdriver.Chrome:
+    options = Options()
+    options_args = {
+        "--headless": headless,
+        "--disable-gpu": disable_gpu,
+        "--no-sandbox": no_sandbox,
+        "--disable-dev-shm-usage": disable_dev_shm_usage,
+    }
+    for flag, value in options_args.items():
+        if value:
+            try:
+                options.add_argument(flag)
+            except:
+                pass
+    driver = webdriver.Chrome(options=options)
+    return driver
 
 def _wait_for_elements(
     driver: webdriver.Chrome,

@@ -1,70 +1,39 @@
-import tempfile
+from typing import Dict
 import os
-import hashlib
 import datetime
 import zipfile
 from io import BytesIO
-from typing import List, Optional
-from pathlib import Path
-
-
+from typing import List
 import yt_dlp
 
-class YouTubeVideo:
-    
-    ENTITY_TYPE = "song"
+from music_downloader.base import BaseSong
+
+
+class YouTubeSong(BaseSong):
     
     def __init__(self, url: str):
-        self.url = url
-        self.info = self._get_video_info()
-        self.artist = self.info.get('uploader', 'Unknown Artist')
-        self._title = self._format_song_title(self.info.get('title', 'Unknown Title'))
-        self.entity_type = "song"
-        self.platform = "YouTube"
-        self.download_from = "YouTube"
-        self._audio = None
+        super().__init__(url)
+
+    def get_platform(self) -> str:
+        return "YouTube"
 
     @staticmethod
     def is_url_valid(url: str) -> bool:
         return "youtube.com/watch?" in url
 
-    def _get_video_info(self):
+    def scrape_song_info(self) -> Dict[str, str]:
         ydl_opts = {"quiet": True, "extract_flat": True}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            return ydl.extract_info(self.url, download=False)
-
-    def _format_song_title(self, title: str) -> str:
+            info = ydl.extract_info(self.url, download=False)
+        title = info.pop("title")
         if ' - ' not in title:
-            title += f" by {self.artist}"
-        return title
+            title = f"{title} by {self.artist}"
+        info["song"] = title
+        info["artist"] = info.pop("uploader")
+        info["embed_url"] = f"https://www.youtube.com/embed/{info.pop('id')}"
+        return info
 
-    @property
-    def title(self) -> str:
-        return self._title
-
-    @property
-    def embed_url(self) -> str:
-        return f"https://www.youtube.com/embed/{self.info.get('id', '')}"
-
-    @property
-    def filename(self) -> str:
-        return f"{self._title}.mp3"
-
-    @property
-    def audio(self) -> BytesIO:
-        """Returns the cached audio if already downloaded, otherwise downloads it."""
-        if self._audio is None:
-            self.download_audio()
-        return self._audio
-
-    @audio.setter
-    def audio(self, buffer: BytesIO):
-        """Validates and sets the audio buffer."""
-        if not isinstance(buffer, BytesIO):
-            raise TypeError(f"Invalid type for 'audio' property; expected BytesIO, got {type(buffer).__name__}")
-        self._audio = buffer
-
-    def download_audio(self, verbose: int = 0):
+    def _download_audio(self, verbose: int = 0):
         """Downloads the audio and caches it in the _audio attribute."""
         if self._audio is None:
             if verbose >= 1:
@@ -109,8 +78,8 @@ class YouTubePlaylist:
 
     def __init__(self, url: str):
         self.url = url
-        self.video_urls = self._get_playlist_videos()
-        self._videos = None
+        self.song_urls = self._get_playlist_songs()
+        self._songs = None
         self.filename = "playlist.zip"
         self.audio_zipped = None
         self.audio = None
@@ -122,30 +91,30 @@ class YouTubePlaylist:
     def is_url_valid(url: str) -> bool:
         return "youtube.com/playlist?" in url
 
-    def _get_playlist_videos(self) -> List[str]:
+    def _get_playlist_songs(self) -> List[str]:
         ydl_opts = {"quiet": True, "extract_flat": True}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(self.url, download=False)
         return [entry['url'] for entry in info.get('entries', [])]
 
     @property
-    def videos(self) -> List[YouTubeVideo]:
-        if self._videos is None:
-            self._videos = [YouTubeVideo(url) for url in self.video_urls]
-        return self._videos
+    def songs(self) -> List[YouTubeSong]:
+        if self._songs is None:
+            self._songs = [YouTubeSong(url) for url in self.song_urls]
+        return self._songs
 
     def download_audio(self, verbose: int = 0):
         if self.audio is None:
-            self.audio = [video.download_audio(verbose=verbose) for video in self.videos]
+            self.audio = [song.download_audio(verbose=verbose) for song in self.songs]
         return self.audio
 
     def zip_audio(self) -> BytesIO:
         self.download_audio()  # Ensure all audio is downloaded first
         zip_buffer = BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            for video in self.videos:
-                audio_data = video.audio.getvalue()  # Directly get the audio data in memory
-                zip_file.writestr(video.filename.replace('_', ' '), audio_data)
+            for song in self.songs:
+                audio_data = song.audio.getvalue()  # Directly get the audio data in memory
+                zip_file.writestr(song.filename.replace('_', ' '), audio_data)
         zip_buffer.seek(0)  # Ensure the memory pointer is at the beginning before returning
         self.audio_zipped = zip_buffer
         return self.audio_zipped

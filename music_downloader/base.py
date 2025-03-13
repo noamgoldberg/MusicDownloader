@@ -2,53 +2,58 @@ from abc import ABC, abstractmethod
 from typing import List, Union, Dict
 from io import BytesIO
 
+from utils.file_utils import format_safe_filename
+
 
 class BaseSong(ABC):
     ENTITY_TYPE = "song"
     
     def __init__(self, url: str):
         self.url = url.strip()
-        self._song_info = None
-        self._title = None
-        self._artist = None
-        self._embed_url = None
-        self._audio = None
-        self.platform = self.get_platform()
         self.entity_type = self.ENTITY_TYPE
-        self.download_from = self.platform
+        self.platform = self.get_platform()
+        self.download_from = self.get_download_platform()
+        self._info = self.scrape_song_info()
+        self._audio = None
 
     @abstractmethod
     def get_platform(self) -> str:
         pass
 
     @abstractmethod
+    def is_url_valid(self) -> bool:
+        pass
+
+    def get_download_platform(self) -> str:
+        return self.platform
+
+    @abstractmethod
     def scrape_song_info(self) -> Dict[str, Union[str, None]]:
         pass
     
     @property
-    def song_info(self) -> Dict[str, str]:
-        if self._song_info is None:
-            self._song_info = self.scrape_song_info()
-        return self._song_info
+    def info(self) -> Dict[str, str]:
+        if self._info is None:
+            self._info = self.scrape_song_info()
+        return self._info
     
     @property
     def title(self) -> str:
-        return self.song_info["song"]
+        return self.info.get("song", "Unknown Title")
     
     @property
     def artist(self) -> str:
-        return self.song_info["artist"]
+        return self.info.get('artist', 'Unknown Artist')
 
     @property
     def filename(self) -> str:
-        title = self.title \
-            .replace(' /', ' -').replace('/ ', '- ').replace('/', '-') \
-            .replace(' \\', ' -').replace('\\ ', '- ').replace('\\', '-')
-        return f"{title} by {self.artist}.mp3"
+        title = format_safe_filename(self.title)
+        artist = format_safe_filename(self.artist)
+        return f"{title} by {artist}.mp3"
     
     @property
     def embed_url(self) -> str:
-        return self.song_info["embed_url"]
+        return self.info["embed_url"]
     
     @property
     def audio(self) -> BytesIO:
@@ -75,12 +80,11 @@ class BasePlaylist(ABC):
     
     def __init__(self, url: str):
         self.url = url.strip()
-        attrs = self.scrape_playlist_info()
-        self.title = attrs["title"]
-        self.curator = attrs["curator"]
-        self.song_urls = attrs["song_urls"]
+        playlist_info = self.scrape_playlist_info()
+        self.title = playlist_info["title"]
+        self.curator = playlist_info["curator"]
+        self.song_urls = playlist_info["song_urls"]
         self._songs = None
-        self.filename = f"{self.title.replace(' ', '_')}.zip"
         self.audio = None
         self.audio_zipped = None
         self.platform = self.get_platform()
@@ -92,7 +96,10 @@ class BasePlaylist(ABC):
     @abstractmethod
     def scrape_playlist_info(self) -> Dict[str, Union[str, List[str]]]:
         pass
-    
+
+    def filename(self) -> str:
+        return f"{self.title}.zip"
+
     @property
     def length(self) -> int:
         return len(self.song_urls)

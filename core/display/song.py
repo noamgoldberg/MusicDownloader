@@ -4,7 +4,7 @@ from core.display.download import prepare_song_download_kwargs, display_download
 import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 
-from music_downloader.youtube import YouTubeVideo
+from music_downloader.youtube import YouTubeSong
 from music_downloader.spotify import SpotifySong
 from music_downloader.soundcloud import SoundCloudSong
 
@@ -15,7 +15,7 @@ class SongDisplay:
     
     def __init__(
         self,
-        song_object: Union[YouTubeVideo, SpotifySong, SoundCloudSong]
+        song_object: Union[YouTubeSong, SpotifySong, SoundCloudSong]
     ):
         self.entity = song_object
 

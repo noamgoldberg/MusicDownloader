@@ -8,7 +8,7 @@ from io import BytesIO
 from stqdm import stqdm as st_tqdm
 import re
 
-from music_downloader.youtube import YouTubeVideo
+from music_downloader.youtube import YouTubeSong
 from utils.zip_utils import zip_audio_files
 
 
@@ -126,14 +126,14 @@ class SpotifySong:
     def youtube_video(self) -> str:
         """Lazy property for YouTube Video"""
         if self._youtube_video is None:
-            self._youtube_video = YouTubeVideo(self.youtube_url)
+            self._youtube_video = YouTubeSong(self.youtube_url)
         return self._youtube_video
 
     @property
     def youtube_embed_url(self) -> str:
         """Lazy property for YouTube embed URL; initializes YouTube video object if not set."""
         if not self.youtube_video:
-            self.youtube_video = YouTubeVideo(self.youtube_url)
+            self.youtube_video = YouTubeSong(self.youtube_url)
         return self.youtube_video.embed_url
 
     @property
@@ -142,9 +142,9 @@ class SpotifySong:
         return f"{self.song} by {self.artist}.mp3"
 
     def download_audio(self, verbose: int = 0):
-        """Download the audio by using the YouTubeVideo class."""
+        """Download the audio by using the YouTubeSong class."""
         if not self.youtube_video:
-            self.youtube_video = YouTubeVideo(self.youtube_url)
+            self.youtube_video = YouTubeSong(self.youtube_url)
         return self.youtube_video.download_audio(verbose=verbose)
 
     @property

@@ -12,34 +12,13 @@ from selenium.webdriver.chrome.options import Options
 
 from music_downloader.base import BaseSong, BasePlaylist
 from utils.selenium_utils import (
-    # initialize_driver,
+    initialize_driver,
     try_find_element,
     try_find_elements,
     click_element_close_model
 )
 from utils.zip_utils import zip_audio_files
 
-def initialize_driver(
-    headless: bool = True,
-    disable_gpu: bool = True,
-    no_sandbox: bool = True,
-    disable_dev_shm_usage: bool = True,
-) -> webdriver.Chrome:
-    options = Options()
-    options_args = {
-        "--headless": headless,
-        "--disable-gpu": disable_gpu,
-        "--no-sandbox": no_sandbox,
-        "--disable-dev-shm-usage": disable_dev_shm_usage,
-    }
-    for flag, value in options_args.items():
-        if value:
-            try:
-                options.add_argument(flag)
-            except:
-                pass
-    driver = webdriver.Chrome(options=options)
-    return driver
 
 class SoundCloudSong(BaseSong):
     
@@ -129,7 +108,6 @@ class SoundCloudSong(BaseSong):
 
 class SoundCloudPlaylist:
     
-    URL_FUNC = lambda url: ("soundcloud.com/" in url) and (is_soundcloud_playlist(url))
     ENTITY_TYPE = "playlist"
 
     def __init__(self, url: str):
