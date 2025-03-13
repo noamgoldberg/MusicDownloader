@@ -37,8 +37,8 @@ def initialize_driver(
     options_args = {
         "--headless=new": headless,
         "--disable-gpu": disable_gpu,
-        "--no-sandbox": no_sandbox,
-        "--disable-dev-shm-usage": disable_dev_shm_usage,
+        # "--no-sandbox": no_sandbox,
+        # "--disable-dev-shm-usage": disable_dev_shm_usage,
     }
     for flag, value in options_args.items():
         if value:
