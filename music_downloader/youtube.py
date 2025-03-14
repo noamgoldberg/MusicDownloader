@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Union
 import os
 import datetime
 import zipfile
@@ -6,7 +6,7 @@ from io import BytesIO
 from typing import List
 import yt_dlp
 
-from music_downloader.base import BaseSong
+from music_downloader.base import BaseSong, BasePlaylist
 
 
 class YouTubeSong(BaseSong):
@@ -25,11 +25,11 @@ class YouTubeSong(BaseSong):
         ydl_opts = {"quiet": True, "extract_flat": True}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(self.url, download=False)
+        info["artist"] = info.pop("uploader")
         title = info.pop("title")
         if ' - ' not in title:
-            title = f"{title} by {self.artist}"
+            title = f"{title} by {info['artist']}"
         info["song"] = title
-        info["artist"] = info.pop("uploader")
         info["embed_url"] = f"https://www.youtube.com/embed/{info.pop('id')}"
         return info
 
@@ -72,49 +72,37 @@ class YouTubeSong(BaseSong):
         return self._audio
 
 
-class YouTubePlaylist:
-
-    ENTITY_TYPE = "playlist"
-
+class YouTubePlaylist(BasePlaylist):
+    
     def __init__(self, url: str):
-        self.url = url
-        self.song_urls = self._get_playlist_songs()
-        self._songs = None
-        self.filename = "playlist.zip"
-        self.audio_zipped = None
-        self.audio = None
-        self.entity_type = "playlist"
-        self.platform = "YouTube"
-        self.download_from = "YouTube"
+        super().__init__(url)
+    
+    def get_platform(self) -> str:
+        return "YouTube"
 
     @staticmethod
     def is_url_valid(url: str) -> bool:
         return "youtube.com/playlist?" in url
-
+    
     def _get_playlist_songs(self) -> List[str]:
         ydl_opts = {"quiet": True, "extract_flat": True}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(self.url, download=False)
         return [entry['url'] for entry in info.get('entries', [])]
 
+    def scrape_playlist_info(self) -> Dict[str, Union[str, List[str]]]:
+        ydl_opts = {"quiet": True, "extract_flat": True}
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(self.url, download=False)
+        info["title"] = info.get("title", "Unknown Title")
+        info["curator"] = info.pop("uploader", "Unknown Curator")
+        info["song_urls"] = [s['url'] for s in info.get('entries', [])]
+        info["embed_url"] = f"https://www.youtube.com/embed/{info.get('id')}" if info.get("id") else None
+        return info
+
+    def create_song(self, url: str):
+        return YouTubeSong(url)
+    
     @property
-    def songs(self) -> List[YouTubeSong]:
-        if self._songs is None:
-            self._songs = [YouTubeSong(url) for url in self.song_urls]
-        return self._songs
-
-    def download_audio(self, verbose: int = 0):
-        if self.audio is None:
-            self.audio = [song.download_audio(verbose=verbose) for song in self.songs]
-        return self.audio
-
-    def zip_audio(self) -> BytesIO:
-        self.download_audio()  # Ensure all audio is downloaded first
-        zip_buffer = BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            for song in self.songs:
-                audio_data = song.audio.getvalue()  # Directly get the audio data in memory
-                zip_file.writestr(song.filename.replace('_', ' '), audio_data)
-        zip_buffer.seek(0)  # Ensure the memory pointer is at the beginning before returning
-        self.audio_zipped = zip_buffer
-        return self.audio_zipped
+    def thumbnail(self) -> str:
+        return self.info.get("thumbnail")

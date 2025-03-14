@@ -1,14 +1,12 @@
-from typing import List, Union, Dict, Optional
+from typing import List, Union, Dict
 import time
 import re
 import tempfile
 import os
 from io import BytesIO
-from stqdm import stqdm as st_tqdm
 import yt_dlp
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
 
 from music_downloader.base import BaseSong, BasePlaylist
 from utils.selenium_utils import (
@@ -17,8 +15,37 @@ from utils.selenium_utils import (
     try_find_elements,
     click_element_close_model
 )
-from utils.zip_utils import zip_audio_files
 
+
+def scrape_soundcloud_embed_url(
+    url: str,
+    driver: webdriver.Chrome = None,
+    headless: bool = True,
+    disable_gpu: bool = True,
+    no_sandbox: bool = True,
+    disable_dev_shm_usage: bool = True
+) -> Union[str, None]:
+    if driver is None:
+        driver = initialize_driver(
+            headless=headless,
+            disable_gpu=disable_gpu,
+            no_sandbox=no_sandbox,
+            disable_dev_shm_usage=disable_dev_shm_usage,
+        )
+    driver.get(url)
+    share_button = try_find_element(driver, By.CSS_SELECTOR, 'button[title="Share"]')
+    if share_button is not None:
+        time.sleep(1)
+        click_element_close_model(driver, share_button, sleep=2)
+        embed_tab = try_find_element(driver, By.LINK_TEXT, 'Embed', timeout=20)
+        if embed_tab is not None:
+            time.sleep(1)
+            click_element_close_model(driver, embed_tab, sleep=2)
+            iframes = try_find_elements(driver, by=By.CSS_SELECTOR, value="iframe", wait=True, timeout=10)
+            embed_urls = [i.get_attribute("src") for i in iframes]
+            embed_urls = list(set([url for url in embed_urls if "api.soundcloud" in url]))
+            if len(embed_urls) == 1:
+                return embed_urls[0]
 
 class SoundCloudSong(BaseSong):
     
@@ -35,22 +62,6 @@ class SoundCloudSong(BaseSong):
             return not SoundCloudPlaylist.is_url_playlist(url)
         return False
     
-    @staticmethod
-    def _get_embed_url(driver: webdriver.Chrome) -> Union[str, None]:
-        share_button = try_find_element(driver, By.CSS_SELECTOR, 'button[title="Share"]')
-        if share_button is not None:
-            time.sleep(1)
-            click_element_close_model(driver, share_button, sleep=2)
-            embed_tab = try_find_element(driver, By.LINK_TEXT, 'Embed', timeout=20)
-            if embed_tab is not None:
-                time.sleep(1)
-                click_element_close_model(driver, embed_tab, sleep=2)
-                iframes = try_find_elements(driver, by=By.CSS_SELECTOR, value="iframe", wait=True, timeout=10)
-                embed_urls = [i.get_attribute("src") for i in iframes]
-                embed_urls = list(set([url for url in embed_urls if "api.soundcloud" in url]))
-                if len(embed_urls) == 1:
-                    return embed_urls[0]
-                
     def scrape_song_info(self) -> Dict[str, Union[str, None]]:
         driver = initialize_driver(
             headless=True,
@@ -67,9 +78,9 @@ class SoundCloudSong(BaseSong):
             raise Exception(f"Failed to extract song title and artist/username for {self.url}")
         info["embed_url"] = None
         # try:
-        #     info["embed_url"] = self._get_embed_url(driver)
+        #     info["embed_url"] = scrape_soundcloud_embed_url(self.url, driver=driver)
         # except StaleElementReferenceException:  # retry
-        #     info["embed_url"] = self._get_embed_url(driver)
+        #     info["embed_url"] = scrape_soundcloud_embed_url(self.url, driver=driver)
         driver.quit()
         return info
 
@@ -106,25 +117,13 @@ class SoundCloudSong(BaseSong):
         buffer.seek(0)  # Reset the buffer position before returning
         return buffer#.getvalue()  # Return the bytes in the buffer
 
-class SoundCloudPlaylist:
+class SoundCloudPlaylist(BasePlaylist):
     
-    ENTITY_TYPE = "playlist"
-
     def __init__(self, url: str):
-        self.url = url.strip()
-        attrs = self.scrape_playlist_info()
-        self.title = attrs["title"]
-        self.curator = attrs["curator"]
-        self.song_urls = attrs["song_urls"]
-        self._songs = None
-        self.filename = os.path.join(self.title.replace(' ', '_'), '.zip')
-        self.audio = None
-        self.audio_zipped = None
-        self.platform = "SoundCloud"
-        self.entity_type = SoundCloudPlaylist.ENTITY_TYPE
-        self.download_from = self.platform
-        self.embed_url = None
-        self.current_batch_size = None
+        super().__init__(url)
+
+    def get_platform(self) -> str:
+        return "SoundCloud"
 
     @staticmethod
     def is_url_playlist(url: str) -> bool:
@@ -138,7 +137,7 @@ class SoundCloudPlaylist:
             return cls.is_url_playlist(url)
         return False
 
-    def scrape_playlist_info(self):
+    def scrape_playlist_info(self) -> Dict[str, str]:
         driver = initialize_driver(
             headless=True,
             disable_gpu=True,
@@ -159,74 +158,21 @@ class SoundCloudPlaylist:
             "title": title, 
             "curator": curator,
             "song_urls": song_urls,
+            "embed_url": None,
+            # "embed_url": scrape_soundcloud_embed_url(self.url, driver=driver)
         }
 
-    @property
-    def length(self) -> int:
-        return len(self.song_urls)
+    def create_song(self, url: str) -> SoundCloudSong:
+        return SoundCloudSong(url)
 
     @property
-    def songs(self):
+    def songs(self) -> List[SoundCloudSong]:
         """Cache songs to ensure they are not re-instantiated."""
         if self._songs is None:
             self._songs = [SoundCloudSong(url) for url in self.song_urls]
         return self._songs
 
-    def songs_generator(self):
-        for song in self.songs:
-            yield song
+    @property
+    def thumbnail(self) -> str:
+        return self.info.get("thumbnail")
 
-    def get_playlist_titles(self) -> List[str]:
-        """Return a list of titles for all songs in the playlist."""
-        return [song.title for song in self.songs]
-
-    def get_playlist_urls(self) -> List[str]:
-        """Return a list of URLs for all songs in the playlist."""
-        return [song.url for song in self.songs]
-
-    def get_playlist_dict(self) -> Dict[str, str]:
-        """Return a list of titles and URLs for all songs in the playlist."""
-        return {song.title: song.url for song in self.songs}
-
-    def download_audio(
-        self,
-        *,
-        stqdm: bool = False,
-        verbose: int = 0
-    ) -> List[bytes]:
-        if self.audio is None:  # Ensure we only download once
-            self.audio = []
-            desc = f"Downloading audio for {self.length} songs in '{self.title}' playlist"
-            songs = st_tqdm(self.songs, desc=desc) if stqdm else self.songs
-            for i, song in enumerate(songs):
-                if stqdm:
-                    songs.set_description(f"{i + 1} / {self.length} Downloading: {song.title}")
-                self.audio.append(song.download_audio(
-                    verbose=verbose
-                ))
-        return self.audio
-
-    def zip_audio(
-        self,
-        *,
-        batch_size: Optional[int] = None,
-        stqdm: bool = False,
-        verbose: int = 0
-    ) -> BytesIO:
-        """Zip audio files of the playlist songs."""
-        self.download_audio(
-            stqdm=stqdm,
-            verbose=verbose
-        )
-        audio_not_yet_zipped = self.audio_zipped is None
-        batch_size_changed = batch_size != self.current_batch_size
-        if audio_not_yet_zipped or batch_size_changed:
-            self.current_batch_size = batch_size
-            desc = f"Zipping audio for {self.length} songs in '{self.title}' playlist"
-            if batch_size:
-                if batch_size < self.length:
-                    desc += f" (batches of {batch_size})"
-                else:
-                    batch_size = None
-            self.audio_zipped = zip_audio_files(self.songs, batch_size=batch_size, stqdm=stqdm, total=self.length)
-        return self.audio_zipped

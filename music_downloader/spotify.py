@@ -4,13 +4,10 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from youtubesearchpython import VideosSearch
 from dotenv import load_dotenv
-from io import BytesIO
-from stqdm import stqdm as st_tqdm
 import re
 
 from music_downloader.base import BaseSong, BasePlaylist
 from music_downloader.youtube import YouTubeSong
-from utils.zip_utils import zip_audio_files
 
 
 load_dotenv()
@@ -45,18 +42,12 @@ class SpotifySong(BaseSong):
         self._youtube_embed_url = None
         super().__init__(url)
 
-    def _validate_details(self, song: str, artist: str):
-        for (param, value) in [("song", song), ("artist", artist)]:
-            if value and value.strip().lower() != getattr(self, param, "").strip().lower():
-                raise ValueError(f"Given {param} {value} does not match {param} extracted from given url, '{getattr(self, param)}'")
-
     @staticmethod
     def is_url_valid(url: str) -> bool:
         return "spotify.com/track" in url
 
     def scrape_song_info(self) -> Dict[str, str]:
         song, artist = self.get_song_details_from_spotify(self.url)
-        self._validate_details(song, artist)
         embed_url = self.get_embed_url(self.url)
         return {
             "song": song,
@@ -133,7 +124,7 @@ class SpotifySong(BaseSong):
     def youtube_url(self) -> str:
         """Lazy property for YouTube URL; calculates and stores the URL if not set."""
         if not self._youtube_url:
-            self._youtube_url = self.get_youtube_url_from_song(self.song, self.artist)
+            self._youtube_url = self.get_youtube_url_from_song(self.title, self.artist)
         return self._youtube_url
 
     @property
@@ -154,107 +145,63 @@ class SpotifySong(BaseSong):
         return self.youtube_song.download_audio(verbose=verbose)
 
 
-class SpotifyPlaylist:
-    
-    ENTITY_TYPE = "playlist"
+class SpotifyPlaylist(BasePlaylist):
     
     def __init__(self, url: str):
         self.sp = self.authenticate()
-        self.url = url
-        self.spotipy_playlist = self.sp.playlist(self.playlist_id)
-        self.title = self.get_title()
-        self._songs = None
-        self.filename = self.get_filename()
-        self.audio = None
-        self.audio_zipped = None
-        self.length = self.get_num_tracks_spotify_playlist()
-        self.thumbnail = self.get_thumbnail()
-        self.current_batch_size = None
-        self.platform = "Spotify"
-        self.entity_type = SpotifyPlaylist.ENTITY_TYPE
-        self.download_from = "YouTube"
-        
-    @staticmethod
-    def is_url_valid(url: str) -> bool:
-        return "spotify.com/playlist" in url
+        super().__init__(url)
 
     def authenticate(self) -> spotipy.Spotify:
         return authenticate()
+
+    @staticmethod
+    def get_platform() -> str:
+        return "Spotify"
+    
+    @staticmethod
+    def get_download_platform() -> str:
+        return "YouTube"
+
+    @staticmethod
+    def is_url_valid(url: str) -> bool:
+        return "spotify.com/playlist" in url
 
     @property
     def playlist_id(self) -> str:
         return self.url.split('/playlist/')[1].split('?')[0]
 
-    @property
-    def embed_url(self) -> str:
-        return f"https://open.spotify.com/embed/playlist/{self.playlist_id}"
+    @staticmethod
+    def get_embed_url(playlist_id: str) -> str:
+        return f"https://open.spotify.com/embed/playlist/{playlist_id}"
+
+    def scrape_playlist_info(self) -> Dict[str, Union[str, None]]:
+        info = self.sp.playlist(self.playlist_id)
+        info["title"] = info["name"]
+        info["curator"] = info['owner']['id']
+        info["embed_url"] = self.get_embed_url(self.playlist_id)
+        return info
+
+    @staticmethod
+    def create_song(*, song: str, artist: str, url: str) -> SpotifySong:
+        return SpotifySong(song=song, artist=artist, url=url)
 
     @property
     def songs(self) -> List[SpotifySong]:
         if self._songs is None:
             self._songs = [
-                SpotifySong(
+                self.create_song(
                     song=track['track']['name'],
                     artist=track['track']['artists'][0]['name'],
                     url=track["track"]["external_urls"]["spotify"],
-                ) for track in self.spotipy_playlist['tracks']['items']
+                ) for track in self.info['tracks']['items']
             ]
         return self._songs
-
-    def get_num_tracks_spotify_playlist(self) -> int:
-        return self.spotipy_playlist["tracks"]["total"]
-
-    def get_thumbnail(self) -> str:
-        return self.spotipy_playlist["images"][0]["url"]
-
-    def get_title(self) -> str:
-        return self.spotipy_playlist["name"]
-
-    def get_filename(self) -> str:
-        """Generate a filename for the playlist zip file."""
-        playlist_title = self.sp.playlist(self.url.split('/playlist/')[1].split('?')[0])['name']
-        return f"{playlist_title}.zip"
-
-    def download_audio(
-        self,
-        *,
-        stqdm: bool = False,
-        verbose: int = 0
-    ) -> bytes:
-        if not self.audio:
-            self.audio = []
-            desc = f"Downloading audio for {self.length} songs in '{self.title}' playlist"
-            songs = st_tqdm(self.songs, desc=desc) if stqdm else self.songs
-            for i, song in enumerate(songs):
-                if stqdm:
-                    songs.set_description(f"{i + 1} / {self.length} Downloading: {song.title}")
-                self.audio.append(song.download_audio(
-                    verbose=verbose
-                ))
-        return self.audio
-
-    def zip_audio(
-        self,
-        *,
-        batch_size: Optional[int] = None,
-        stqdm: bool = False,
-        verbose: int = 0
-    ) -> BytesIO:
-        """Zip audio files of the playlist songs."""
-        self.download_audio(
-            stqdm=stqdm,
-            verbose=verbose
-        )
-        audio_not_yet_zipped = self.audio_zipped is None
-        batch_size_changed = batch_size != self.current_batch_size
-        if audio_not_yet_zipped or batch_size_changed:
-            self.current_batch_size = batch_size
-            desc = f"Zipping audio for {self.length} songs in '{self.title}' playlist"
-            if batch_size:
-                if batch_size < self.length:
-                    desc += f" (batches of {batch_size})"
-                else:
-                    batch_size = None
-            self.audio_zipped = zip_audio_files(self.songs, batch_size=batch_size, stqdm=stqdm, total=self.length)
-        return self.audio_zipped
     
+    def get_num_tracks(self, ignore_limit: bool = False) -> int:
+        num_tracks = self.info["tracks"]["total"]
+        if ignore_limit:
+            return min(num_tracks, 100)
+        return num_tracks
+
+    def thumbnail(self) -> str:
+        return self.info["images"][0]["url"]
