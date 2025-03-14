@@ -80,7 +80,7 @@ class YouTubeSong(BaseSong):
             temp_filename, suffix = f"{temp_file_dir}/{current_time}", ".mp3"
             temp_filepath = f"{temp_filename}{suffix}"
             ydl_opts = {
-                'format': 'bestaudio',
+                'format': 'audio/mp3',
                 'extractaudio': True,         # Extract audio only
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
@@ -88,7 +88,7 @@ class YouTubeSong(BaseSong):
                     'preferredquality': '192',
                 }],
                 # 'postprocessor_args': ['-ar', '44100'],  # Ensures a standard sample rate
-                'outtmpl': temp_filename,  # Save to a temporary file
+                'outtmpl': temp_filename + ".%(ext)s",  # Save to a temporary file
                 'quiet': verbose == 0,
                 # 'no_warnings': True,
             }
