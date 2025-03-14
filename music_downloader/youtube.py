@@ -80,7 +80,8 @@ class YouTubeSong(BaseSong):
             temp_filename, suffix = f"{temp_file_dir}/{current_time}", ".mp3"
             temp_filepath = f"{temp_filename}{suffix}"
             ydl_opts = {
-                'format': 'bestaudio',
+                'format': 'audio/mp3',
+                'extractaudio': True,         # Extract audio only
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',

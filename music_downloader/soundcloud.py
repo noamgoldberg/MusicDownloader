@@ -98,7 +98,7 @@ class SoundCloudSong(BaseSong):
 
         # Set up options for yt-dlp to download the audio
         ydl_opts = {
-            'format': 'audio/mp3',  # Download the best audio quality
+            'format': 'audio/mp3',
             'extractaudio': True,         # Extract audio only
             'audioformat': 'mp3',         # Convert to mp3
             'postprocessors': [{
