@@ -80,7 +80,7 @@ class YouTubeSong(BaseSong):
             temp_filename, suffix = f"{temp_file_dir}/{current_time}", ".mp3"
             temp_filepath = f"{temp_filename}{suffix}"
             ydl_opts = {
-                'format': 'audio/mp3',
+                'format': 'bestaudio',
                 'extractaudio': True,         # Extract audio only
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
@@ -91,7 +91,6 @@ class YouTubeSong(BaseSong):
                 'outtmpl': temp_filename,  # Save to a temporary file
                 'quiet': verbose == 0,
                 # 'no_warnings': True,
-                # 'extractaudio': True,  # Explicitly ask for audio extraction
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
