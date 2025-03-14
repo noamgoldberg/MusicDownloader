@@ -5,6 +5,7 @@ import zipfile
 from io import BytesIO
 from typing import List
 import yt_dlp
+from pytube import YouTube, Playlist
 
 from music_downloader.base import BaseSong, BasePlaylist
 
@@ -84,14 +85,27 @@ class YouTubePlaylist(BasePlaylist):
     def is_url_valid(url: str) -> bool:
         return "youtube.com/playlist?" in url
 
+    # def scrape_playlist_info(self) -> Dict[str, Union[str, List[str]]]:
+    #     ydl_opts = {"quiet": True, "extract_flat": True}
+    #     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    #         info = ydl.extract_info(self.url, download=False)
+    #     info["title"] = info.get("title", "Unknown Title")
+    #     info["curator"] = info.pop("uploader", "Unknown Curator")
+    #     info["song_urls"] = [s['url'] for s in info.get('entries', [])]
+    #     info["embed_url"] = f"https://www.youtube.com/embed/{info.get('id')}" if info.get("id") else None
+    #     return info
+
     def scrape_playlist_info(self) -> Dict[str, Union[str, List[str]]]:
-        ydl_opts = {"quiet": True, "extract_flat": True}
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(self.url, download=False)
-        info["title"] = info.get("title", "Unknown Title")
-        info["curator"] = info.pop("uploader", "Unknown Curator")
-        info["song_urls"] = [s['url'] for s in info.get('entries', [])]
-        info["embed_url"] = f"https://www.youtube.com/embed/{info.get('id')}" if info.get("id") else None
+        # Extract playlist details using pytube
+        playlist = Playlist(self.url)
+        videos = [YouTube(url) for url in playlist.video_urls]  # Need to create YouTube objects
+        info = {
+            "title": playlist.title or "Unknown Title",
+            "curator": "Unknown Curator",  # pytube does not provide the owner
+            "song_urls": playlist.video_urls,
+            "embed_url": f"https://www.youtube.com/embed/{videos[0].video_id}" if videos else None,
+            "thumbnail": videos[0].thumbnail_url if videos else ""
+        }
         return info
 
     def create_song(self, url: str):
