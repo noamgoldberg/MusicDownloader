@@ -83,12 +83,6 @@ class YouTubePlaylist(BasePlaylist):
     @staticmethod
     def is_url_valid(url: str) -> bool:
         return "youtube.com/playlist?" in url
-    
-    def _get_playlist_songs(self) -> List[str]:
-        ydl_opts = {"quiet": True, "extract_flat": True}
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(self.url, download=False)
-        return [entry['url'] for entry in info.get('entries', [])]
 
     def scrape_playlist_info(self) -> Dict[str, Union[str, List[str]]]:
         ydl_opts = {"quiet": True, "extract_flat": True}
