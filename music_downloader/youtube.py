@@ -1,7 +1,4 @@
 from typing import Dict, Union
-import os
-import datetime
-import zipfile
 from io import BytesIO
 from typing import List
 import yt_dlp
@@ -23,55 +20,89 @@ class YouTubeSong(BaseSong):
         return "youtube.com/watch?" in url
 
     def scrape_song_info(self) -> Dict[str, str]:
-        ydl_opts = {"quiet": True, "extract_flat": True}
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(self.url, download=False)
-        info["artist"] = info.pop("uploader")
-        title = info.pop("title")
-        if ' - ' not in title:
-            title = f"{title} by {info['artist']}"
-        info["song"] = title
-        info["embed_url"] = f"https://www.youtube.com/embed/{info.pop('id')}"
+        """Extracts song information using pytube."""
+        yt = YouTube(self.url)
+        
+        info = {
+            "artist": yt.author,  # Equivalent to 'uploader' in yt_dlp
+            "song": yt.title,
+            "embed_url": f"https://www.youtube.com/embed/{yt.video_id}",
+        }
+
+        # Format title to include artist if needed
+        if ' - ' not in info["song"]:
+            info["song"] = f"{info['song']} by {info['artist']}"
+
         return info
 
-    def _download_audio(self, verbose: int = 0):
-        """Downloads the audio and caches it in the _audio attribute."""
+    def _download_audio(self, verbose: int = 0) -> bytes:
+        """Downloads the audio and caches it in the _audio attribute using pytube, storing it in memory."""
         if self._audio is None:
             if verbose >= 1:
                 print(f"...Downloading audio for '{self.title}': {self.url}")
 
-            # Create a temporary file with a controlled output format
-            temp_file_dir = "data"
-            os.makedirs(temp_file_dir, exist_ok=True)
-            current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-            temp_filename, suffix = f"{temp_file_dir}/{current_time}", ".mp3"
-            temp_filepath = f"{temp_filename}{suffix}"
-            ydl_opts = {
-                'format': 'bestaudio',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-                # 'postprocessor_args': ['-ar', '44100'],  # Ensures a standard sample rate
-                'outtmpl': temp_filename,  # Save to a temporary file
-                'quiet': verbose == 0,
-                # 'no_warnings': True,
-                # 'extractaudio': True,  # Explicitly ask for audio extraction
-            }
+            # Download audio stream
+            yt = YouTube(self.url)
+            audio_stream = yt.streams.filter(only_audio=True).first()
 
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([self.url])
+            # Read audio data into memory
+            audio_buffer = BytesIO()
+            audio_stream.stream_to_buffer(audio_buffer)
+            audio_buffer.seek(0)  # Reset buffer position
 
-            # Read the file into memory
-            with open(temp_filepath, 'rb') as f:  # yt_dlp appends .mp3 after processing
-                self._audio = BytesIO(f.read())
-
-            # Clean up the temporary file
-            os.remove(temp_filepath)
+            self._audio = audio_buffer
 
         return self._audio
 
+    # def scrape_song_info(self) -> Dict[str, str]:
+    #     ydl_opts = {"quiet": True, "extract_flat": True}
+    #     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    #         info = ydl.extract_info(self.url, download=False)
+    #     info["artist"] = info.pop("uploader")
+    #     title = info.pop("title")
+    #     if ' - ' not in title:
+    #         title = f"{title} by {info['artist']}"
+    #     info["song"] = title
+    #     info["embed_url"] = f"https://www.youtube.com/embed/{info.pop('id')}"
+    #     return info
+
+    # def _download_audio(self, verbose: int = 0):
+    #     """Downloads the audio and caches it in the _audio attribute."""
+    #     if self._audio is None:
+    #         if verbose >= 1:
+    #             print(f"...Downloading audio for '{self.title}': {self.url}")
+
+    #         # Create a temporary file with a controlled output format
+    #         temp_file_dir = "data"
+    #         os.makedirs(temp_file_dir, exist_ok=True)
+    #         current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    #         temp_filename, suffix = f"{temp_file_dir}/{current_time}", ".mp3"
+    #         temp_filepath = f"{temp_filename}{suffix}"
+    #         ydl_opts = {
+    #             'format': 'bestaudio',
+    #             'postprocessors': [{
+    #                 'key': 'FFmpegExtractAudio',
+    #                 'preferredcodec': 'mp3',
+    #                 'preferredquality': '192',
+    #             }],
+    #             # 'postprocessor_args': ['-ar', '44100'],  # Ensures a standard sample rate
+    #             'outtmpl': temp_filename,  # Save to a temporary file
+    #             'quiet': verbose == 0,
+    #             # 'no_warnings': True,
+    #             # 'extractaudio': True,  # Explicitly ask for audio extraction
+    #         }
+
+    #         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    #             ydl.download([self.url])
+
+    #         # Read the file into memory
+    #         with open(temp_filepath, 'rb') as f:  # yt_dlp appends .mp3 after processing
+    #             self._audio = BytesIO(f.read())
+
+    #         # Clean up the temporary file
+    #         os.remove(temp_filepath)
+
+    #     return self._audio
 
 class YouTubePlaylist(BasePlaylist):
     
