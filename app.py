@@ -33,10 +33,9 @@ def launch_app():
     data_limit, units, total_size, total_songs = 2, "gb", 0, 0
     for i, url in enumerate(urls):
         with st.container(border=True):
-            results = display_entity(url)
-            num_songs, download_kwargs = results
-            download_kwargs = [download_kwargs] if isinstance(download_kwargs, dict) else download_kwargs
+            num_songs, download_kwargs = display_entity(url)
             if download_kwargs:
+                download_kwargs = [download_kwargs] if isinstance(download_kwargs, dict) else download_kwargs
                 for kwargs in download_kwargs:
                     data_iter, filename = kwargs["data"], kwargs["file_name"]
                     data[filename] = BytesIO(data_iter) if isinstance(data_iter, bytes) else data_iter
