@@ -84,7 +84,7 @@ class BaseSong(ABC):
         logger.info(f"Setting audio buffer for song: {self.title}")
         self._audio = buffer
     
-    def _download_audio(self, verbose: int = 0) -> bytes:
+    def _download_audio(self, format: str = ".mp3", verbose: int = 0) -> bytes:
         """Downloads the audio and caches it in memory."""
         buffer = BytesIO()
 
@@ -98,7 +98,7 @@ class BaseSong(ABC):
 
         # Set up options for yt-dlp to download the audio
         ydl_opts = {
-            'format': 'audio/mp3',
+            'format': 'bestaudio/audio',
             'extractaudio': True,         # Extract audio only
             'audioformat': 'mp3',         # Convert to mp3
             'postprocessors': [{
