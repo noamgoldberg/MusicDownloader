@@ -84,38 +84,6 @@ class SoundCloudSong(BaseSong):
         driver.quit()
         return info
 
-    def _download_audio(self, verbose: int = 0) -> bytes:
-        """Downloads the audio and caches it in memory."""
-        buffer = BytesIO()
-
-        # Define a custom download function that writes to the buffer
-        def write_to_buffer(d):
-            if d['status'] == 'finished':
-                buffer.seek(0)  # Reset buffer position for reading
-                buffer.truncate()  # Clear buffer content to prevent overlap
-                with open(d['filename'], 'rb') as f:
-                    buffer.write(f.read())
-
-        # Set up options for yt-dlp to download the audio
-        ydl_opts = {
-            'format': 'audio/mp3',
-            'extractaudio': True,         # Extract audio only
-            'audioformat': 'mp3',         # Convert to mp3
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-            'outtmpl': tempfile.gettempdir() + '/temp_audio_%(id)s.%(ext)s',  # Temporary file name with unique ID
-            'progress_hooks': [write_to_buffer],  # Use custom hook to write to buffer
-            'quiet': verbose == 0  # Set verbosity based on the verbose argument
-        }
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([self.url])
-
-        buffer.seek(0)  # Reset the buffer position before returning
-        return buffer#.getvalue()  # Return the bytes in the buffer
 
 class SoundCloudPlaylist(BasePlaylist):
     

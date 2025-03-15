@@ -67,44 +67,6 @@ class YouTubeSong(BaseSong):
         info["embed_url"] = f"https://www.youtube.com/embed/{info.pop('id')}"
         return info
 
-    def _download_audio(self, verbose: int = 0):
-        """Downloads the audio and caches it in the _audio attribute."""
-        if self._audio is None:
-            if verbose >= 1:
-                print(f"...Downloading audio for '{self.title}': {self.url}")
-
-            # Create a temporary file with a controlled output format
-            temp_file_dir = "data"
-            os.makedirs(temp_file_dir, exist_ok=True)
-            current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-            temp_filename, suffix = f"{temp_file_dir}/{current_time}", ".mp3"
-            temp_filepath = f"{temp_filename}{suffix}"
-            ydl_opts = {
-                'format': 'audio/mp3',
-                'extractaudio': True,         # Extract audio only
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-                # 'postprocessor_args': ['-ar', '44100'],  # Ensures a standard sample rate
-                'outtmpl': temp_filename + ".%(ext)s",  # Save to a temporary file
-                'quiet': verbose == 0,
-                # 'no_warnings': True,
-            }
-
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([self.url])
-
-            # Read the file into memory
-            with open(temp_filepath, 'rb') as f:  # yt_dlp appends .mp3 after processing
-                self._audio = BytesIO(f.read())
-
-            # Clean up the temporary file
-            os.remove(temp_filepath)
-
-        return self._audio
-
 class YouTubePlaylist(BasePlaylist):
     
     def __init__(self, url: str):
