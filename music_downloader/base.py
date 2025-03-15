@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Union, Dict, Optional
+from typing import List, Union, Dict, Optional, Any
 from io import BytesIO
 from stqdm import stqdm as st_tqdm
 import tempfile
@@ -83,8 +83,16 @@ class BaseSong(ABC):
             raise TypeError("Invalid type for 'audio' property; expected BytesIO")
         logger.info(f"Setting audio buffer for song: {self.title}")
         self._audio = buffer
+        
+    @property
+    @abstractmethod
+    def audio_format(self) -> Dict[str, Dict[str, Any]]:
+        pass
     
-    def _download_audio(self, format: str = ".mp3", verbose: int = 0) -> bytes:
+    def _download_audio(
+        self,
+        verbose: int = 0
+    ) -> bytes:
         """Downloads the audio and caches it in memory."""
         buffer = BytesIO()
 
@@ -96,25 +104,23 @@ class BaseSong(ABC):
                 with open(d['filename'], 'rb') as f:
                     buffer.write(f.read())
 
-        # Set up options for yt-dlp to download the audio
+        # Combine general options with specific format options
         ydl_opts = {
-            'format': 'bestaudio/audio',
-            'extractaudio': True,         # Extract audio only
-            'audioformat': 'mp3',         # Convert to mp3
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-            'outtmpl': tempfile.gettempdir() + '/temp_audio_%(id)s.%(ext)s',  # Temporary file name with unique ID
+            'extractaudio': True,  # Extract audio only
+            'outtmpl': tempfile.gettempdir() + f'/temp_audio_%(id)s.%(ext)s',  # Temporary file name with unique ID
             'progress_hooks': [write_to_buffer],  # Use custom hook to write to buffer
-            'quiet': verbose == 0  # Set verbosity based on the verbose argument
+            'quiet': verbose == 0, # Set verbosity based on the verbose argument
+            **self.audio_format
         }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([self.url])
 
-        buffer.seek(0)  # Reset the buffer position before returning
-        return buffer#.getvalue()  # Return the bytes in the buffer
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([self.url])
+
+            buffer.seek(0)  # Reset the buffer position before returning
+            return buffer  # Return the bytes in the buffer
+        except yt_dlp.utils.DownloadError as e:
+            raise RuntimeError(f"Download failed: {str(e)}")
     
     def download_audio(self, *, verbose: int = 0) -> bytes:
         if self._audio is None:

@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, Union, Any
 import os
 from io import BytesIO
 from typing import List
@@ -104,6 +104,18 @@ class YouTubePlaylist(BasePlaylist):
 
     # def create_song(self, url: str):
     #     return YouTubeSong(url)
+
+    @property
+    def audio_format(self) -> Dict[str, Any]:
+        return {
+            'format': 'bestaudio/best',
+            'audioformat': 'm4a',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'aac',  # m4a uses aac encoding
+                'preferredquality': '192',
+            }],
+        }
     
     @property
     def thumbnail(self) -> str:

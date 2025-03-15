@@ -1,4 +1,4 @@
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Any
 import time
 import re
 import tempfile
@@ -84,6 +84,17 @@ class SoundCloudSong(BaseSong):
         driver.quit()
         return info
 
+    @property
+    def audio_format(self) -> Dict[str, Any]:
+        return {
+            'format': 'bestaudio/best',
+            'audioformat': 'mp3',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+        }
 
 class SoundCloudPlaylist(BasePlaylist):
     
