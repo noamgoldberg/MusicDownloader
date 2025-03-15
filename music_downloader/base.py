@@ -105,9 +105,10 @@ class BaseSong(ABC):
                     buffer.write(f.read())
 
         # Combine general options with specific format options
+        audio_format_name = self.audio_format["audioformat"]
         ydl_opts = {
             'extractaudio': True,  # Extract audio only
-            'outtmpl': tempfile.gettempdir() + f'/temp_audio_%(id)s.%(ext)s',  # Temporary file name with unique ID
+            'outtmpl': tempfile.gettempdir() + f'/temp_audio_%(id)s.{audio_format_name}',  # Temporary file name with unique ID
             'progress_hooks': [write_to_buffer],  # Use custom hook to write to buffer
             'quiet': verbose == 0, # Set verbosity based on the verbose argument
             **self.audio_format
