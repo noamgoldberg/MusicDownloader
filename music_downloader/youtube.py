@@ -67,6 +67,18 @@ class YouTubeSong(BaseSong):
         info["embed_url"] = f"https://www.youtube.com/embed/{info.pop('id')}"
         return info
 
+    @property
+    def audio_format(self) -> Dict[str, Any]:
+        return {
+            'format': 'bestaudio/best',
+            'audioformat': 'm4a',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'aac',  # m4a uses aac encoding
+                'preferredquality': '192',
+            }],
+        }
+
 class YouTubePlaylist(BasePlaylist):
     
     def __init__(self, url: str):
@@ -104,18 +116,6 @@ class YouTubePlaylist(BasePlaylist):
 
     # def create_song(self, url: str):
     #     return YouTubeSong(url)
-
-    @property
-    def audio_format(self) -> Dict[str, Any]:
-        return {
-            'format': 'bestaudio/best',
-            'audioformat': 'm4a',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'aac',  # m4a uses aac encoding
-                'preferredquality': '192',
-            }],
-        }
     
     @property
     def thumbnail(self) -> str:
