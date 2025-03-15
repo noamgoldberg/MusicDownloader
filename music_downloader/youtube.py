@@ -74,7 +74,7 @@ class YouTubeSong(BaseSong):
             'audioformat': 'm4a',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'aac',  # m4a uses aac encoding
+                'preferredcodec': 'mp3',  # m4a uses aac encoding
                 'preferredquality': '192',
             }],
         }
