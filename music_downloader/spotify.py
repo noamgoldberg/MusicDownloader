@@ -1,4 +1,4 @@
-from typing import Optional, Union, Tuple, List, Dict
+from typing import Optional, Union, Tuple, List, Dict, Any
 import os
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -139,6 +139,10 @@ class SpotifySong(BaseSong):
         """Lazy property for YouTube embed URL; initializes YouTube video object if not set."""
         self.youtube_song: YouTubeSong
         return self.youtube_song.embed_url
+
+    @property
+    def audio_format(self) -> Dict[str, Any]:
+        return YouTubeSong.audio_format
 
     def _download_audio(self, verbose: int = 0):
         """Download the audio by using the YouTubeSong class."""
