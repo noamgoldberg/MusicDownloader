@@ -87,7 +87,7 @@ class SoundCloudSong(BaseSong):
     @property
     def audio_format(self) -> Dict[str, Any]:
         return {
-            'format': 'bestaudio/best',
+            'format': 'audio/mp3',
             'audioformat': 'mp3',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',

@@ -70,7 +70,7 @@ class YouTubeSong(BaseSong):
     @property
     def audio_format(self) -> Dict[str, Any]:
         return {
-            'format': 'bestaudio/best',
+            'format': 'audio/m4a',
             'audioformat': 'm4a',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
