@@ -13,12 +13,22 @@ from music_downloader.youtube import YouTubeSong
 load_dotenv()
 
 def authenticate() -> spotipy.Spotify:
-    """Authenticate Spotify API connection"""
+    """Authenticate Spotify API connection with Streamlit support."""
+    try:
+        import streamlit as st
+        client_id = st.secrets["SPOTIFY_CLIENT_ID"]
+        client_secret = st.secrets["SPOTIFY_CLIENT_SECRET"]
+        redirect_uri = st.secrets["SPOTIFY_REDIRECT_URI"]
+    except (ImportError, KeyError):
+        client_id = os.getenv("SPOTIFY_CLIENT_ID")
+        client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
+        redirect_uri = os.getenv("SPOTIFY_REDIRECT_URI")
+
     return spotipy.Spotify(
         auth_manager=SpotifyOAuth(
-            client_id=os.getenv("SPOTIFY_CLIENT_ID"),
-            client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
-            redirect_uri=os.getenv("SPOTIFY_REDIRECT_URI"),
+            client_id=client_id,
+            client_secret=client_secret,
+            redirect_uri=redirect_uri,
             scope="playlist-read-private"
         )
     )
