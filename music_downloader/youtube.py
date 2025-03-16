@@ -1,4 +1,4 @@
-from typing import Dict, Union, Any
+from typing import Dict, Union, Any, Literal
 import os
 from io import BytesIO
 from typing import List
@@ -11,6 +11,7 @@ from music_downloader.base import BaseSong, BasePlaylist
 class YouTubeSong(BaseSong):
     
     def __init__(self, url: str):
+        self.download_method: Literal["yt_dlp", "pytube"] = "yt_dlp"
         super().__init__(url)
 
     def get_platform(self) -> str:
@@ -20,42 +21,23 @@ class YouTubeSong(BaseSong):
     def is_url_valid(url: str) -> bool:
         return "youtube.com/watch?" in url
 
-    # def scrape_song_info(self) -> Dict[str, str]:
-    #     """Extracts song information using pytube."""
-    #     yt = YouTube(self.url)
+    def scrape_song_info_pytube(self, verbose: int = 0) -> Dict[str, str]:
+        """Extracts song information using pytube."""
+        yt = YouTube(self.url)
         
-    #     info = {
-    #         "artist": yt.author,  # Equivalent to 'uploader' in yt_dlp
-    #         "song": yt.title,
-    #         "embed_url": f"https://www.youtube.com/embed/{yt.video_id}",
-    #     }
+        info = {
+            "artist": yt.author,  # Equivalent to 'uploader' in yt_dlp
+            "song": yt.title,
+            "embed_url": f"https://www.youtube.com/embed/{yt.video_id}",
+        }
 
-    #     # Format title to include artist if needed
-    #     if ' - ' not in info["song"]:
-    #         info["song"] = f"{info['song']} by {info['artist']}"
+        # Format title to include artist if needed
+        if ' - ' not in info["song"]:
+            info["song"] = f"{info['song']} by {info['artist']}"
 
-    #     return info
+        return info
 
-    # def _download_audio(self, verbose: int = 0) -> bytes:
-    #     """Downloads the audio and caches it in the _audio attribute using pytube, storing it in memory."""
-    #     if self._audio is None:
-    #         if verbose >= 1:
-    #             print(f"...Downloading audio for '{self.title}': {self.url}")
-
-    #         # Download audio stream
-    #         yt = YouTube(self.url)
-    #         audio_stream = yt.streams.filter(only_audio=True).first()
-
-    #         # Read audio data into memory
-    #         audio_buffer = BytesIO()
-    #         audio_stream.stream_to_buffer(audio_buffer)
-    #         audio_buffer.seek(0)  # Reset buffer position
-
-    #         self._audio = audio_buffer
-
-    #     return self._audio
-
-    def scrape_song_info(self) -> Dict[str, str]:
+    def scrape_song_info_yt_dlp(self, verbose: int = 0) -> Dict[str, str]:
         ydl_opts = {"quiet": True, "extract_flat": True}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(self.url, download=False)
@@ -66,6 +48,13 @@ class YouTubeSong(BaseSong):
         info["song"] = title
         info["embed_url"] = f"https://www.youtube.com/embed/{info.pop('id')}"
         return info
+
+    def scrape_song_info(self, verbose: int = 0) -> bytes:
+        if self.download_method == "pytube":
+            return self.scrape_song_info_pytube(verbose=verbose)
+        elif self.download_method == "yt_dlp":
+            return self.scrape_song_info_yt_dlp(verbose=verbose)
+        raise ValueError(f"{self.download_method}: Invalid value for; choose from ['yt_dlp', 'pytube']")
 
     @property
     def audio_format(self) -> Dict[str, Any]:
@@ -78,6 +67,33 @@ class YouTubeSong(BaseSong):
                 'preferredquality': '192',
             }],
         }
+        
+    def _download_audio_pytube(self, verbose: int = 0) -> bytes:
+        """Downloads the audio and caches it in the _audio attribute using pytube, storing it in memory."""
+        if self._audio is None:
+            if verbose >= 1:
+                print(f"...Downloading audio for '{self.title}': {self.url}")
+
+            # Download audio stream
+            yt = YouTube(self.url)
+            audio_stream = yt.streams.filter(only_audio=True).first()
+
+            # Read audio data into memory
+            audio_buffer = BytesIO()
+            audio_stream.stream_to_buffer(audio_buffer)
+            audio_buffer.seek(0)  # Reset buffer position
+
+            self._audio = audio_buffer
+
+        return self._audio
+
+    def _download_audio(self, verbose: int = 0) -> bytes:
+        if self.download_method == "pytube":
+            return self._download_audio_pytube(verbose=verbose)
+        elif self.download_method == "yt_dlp":
+            return super()._download_audio(verbose=verbose)
+        raise ValueError(f"{self.download_method}: Invalid value for; choose from ['yt_dlp', 'pytube']")
+
 
 class YouTubePlaylist(BasePlaylist):
     

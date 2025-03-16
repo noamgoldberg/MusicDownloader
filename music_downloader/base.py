@@ -111,6 +111,7 @@ class BaseSong(ABC):
             'outtmpl': tempfile.gettempdir() + f'/temp_audio_%(id)s.{audio_format_name}',  # Temporary file name with unique ID
             'progress_hooks': [write_to_buffer],  # Use custom hook to write to buffer
             'quiet': verbose == 0, # Set verbosity based on the verbose argument
+            'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'},
             **self.audio_format
         }
 
