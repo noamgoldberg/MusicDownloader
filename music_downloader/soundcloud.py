@@ -52,12 +52,12 @@ def scrape_soundcloud_embed_url(
 class SoundCloudSong(BaseSong):
     
     audio_format = {
-        'format': 'audio/m4a',
-        'audioformat': 'm4a',
-        'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
+        "format": "bestaudio[ext=m4a]/bestaudio/best",
+        "audioformat": "m4a",
+        "postprocessors": [{
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "m4a",
+            "preferredquality": "192",
         }],
     }
 
