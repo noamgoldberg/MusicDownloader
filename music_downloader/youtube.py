@@ -10,6 +10,16 @@ from music_downloader.base import BaseSong, BasePlaylist
 
 class YouTubeSong(BaseSong):
     
+    audio_format = {
+        "format": "bestaudio[ext=m4a]/bestaudio/best",
+        "audioformat": "m4a",
+        "postprocessors": [{
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "m4a",
+            "preferredquality": "192",
+        }],
+    }
+
     def __init__(self, url: str):
         self.download_method: Literal["yt_dlp", "pytube"] = "yt_dlp"
         super().__init__(url)
@@ -56,18 +66,6 @@ class YouTubeSong(BaseSong):
             return self.scrape_song_info_yt_dlp(verbose=verbose)
         raise ValueError(f"{self.download_method}: Invalid value for; choose from ['yt_dlp', 'pytube']")
 
-    @property
-    def audio_format(self) -> Dict[str, Any]:
-        return {
-            'format': 'audio/m4a',
-            'audioformat': 'm4a',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',  # m4a uses aac encoding
-                'preferredquality': '192',
-            }],
-        }
-        
     def _download_audio_pytube(self, verbose: int = 0) -> bytes:
         """Downloads the audio and caches it in the _audio attribute using pytube, storing it in memory."""
         if self._audio is None:

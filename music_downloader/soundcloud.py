@@ -7,6 +7,8 @@ from io import BytesIO
 import yt_dlp
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+
 
 from music_downloader.base import BaseSong, BasePlaylist
 from utils.selenium_utils import (
@@ -49,6 +51,16 @@ def scrape_soundcloud_embed_url(
 
 class SoundCloudSong(BaseSong):
     
+    audio_format = {
+        'format': 'audio/m4a',
+        'audioformat': 'm4a',
+        'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+        }],
+    }
+
     def __init__(self, url: str):
         super().__init__(url)
 
@@ -84,18 +96,6 @@ class SoundCloudSong(BaseSong):
         driver.quit()
         return info
 
-    @property
-    def audio_format(self) -> Dict[str, Any]:
-        return {
-            'format': 'audio/mp3',
-            'audioformat': 'mp3',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-        }
-
 class SoundCloudPlaylist(BasePlaylist):
     
     def __init__(self, url: str):
@@ -129,9 +129,34 @@ class SoundCloudPlaylist(BasePlaylist):
             raise Exception(f"Failed to extract playlist title and curator for SoundCloud playlist: {self.url}")
         titles_text = titles_text[0].text
         titles_text_split = titles_text.strip().split('\n')
-        title, curator = titles_text_split[1], titles_text_split[2].rstrip("Verified").strip()
-        song_elems = try_find_elements(driver, by=By.CLASS_NAME, value="trackItem__trackTitle", wait=True, timeout=10)
-        song_urls = [song_elem.get_attribute("href") for song_elem in song_elems]
+        title, curator = titles_text_split[0], titles_text_split[1].rstrip("Verified").strip()
+
+        previous_count = 0
+        sleep_attempts = 0
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+        while True:
+            # Scroll to bottom
+            driver.find_element(By.TAG_NAME, "body").send_keys(Keys.END)
+            time.sleep(0.5)
+
+            # Get all currently loaded song elements
+            song_elems = driver.find_elements(By.CLASS_NAME, "trackItem__trackTitle")
+            current_count = len(song_elems)
+
+            # Check if new songs loaded
+            if current_count == previous_count:
+                sleep_attempts += 1
+                if sleep_attempts >= 3:
+                    break  # stop after 3 attempts with no new songs
+                time.sleep(1)  # wait a bit before trying again
+            else:
+                sleep_attempts = 0  # reset attempts if new songs loaded
+                previous_count = current_count
+
+        # Once done scrolling, extract URLs
+        song_urls = [elem.get_attribute("href") for elem in song_elems if elem.get_attribute("href")]
+
         driver.quit()
         return {
             "title": title, 

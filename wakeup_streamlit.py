@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 def click_button_if_exists(url):
+    
     options = Options()
     options.add_argument('--headless')  # Run headless for minimal resource usage
     options.add_argument('--disable-gpu')  # Optional, for environments with no GPU

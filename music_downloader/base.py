@@ -63,10 +63,14 @@ class BaseSong(ABC):
         return self.info.get("artist", "Unknown Artist")
 
     @property
+    def audio_ext(self) -> str:
+        return self.audio_format["audioformat"]
+
+    @property
     def filename(self) -> str:
         title = format_safe_filename(self.title)
         artist = format_safe_filename(self.artist)
-        return f"{title} by {artist}.mp3"
+        return f"{title} by {artist}.{self.audio_ext}"
     
     @property
     def embed_url(self) -> str:
@@ -112,6 +116,7 @@ class BaseSong(ABC):
             'progress_hooks': [write_to_buffer],  # Use custom hook to write to buffer
             'quiet': verbose == 0, # Set verbosity based on the verbose argument
             'http_headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'},
+            'geo_bypass': True,
             **self.audio_format
         }
 

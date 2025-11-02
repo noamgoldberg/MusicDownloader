@@ -44,6 +44,8 @@ def authenticate() -> spotipy.Spotify:
 
 class SpotifySong(BaseSong):
     
+    audio_format = YouTubeSong.audio_format
+
     def __init__(
         self,
         url: Optional[str] = None,
@@ -158,10 +160,6 @@ class SpotifySong(BaseSong):
         """Lazy property for YouTube embed URL; initializes YouTube video object if not set."""
         self.youtube_song: YouTubeSong
         return self.youtube_song.embed_url
-
-    @property
-    def audio_format(self) -> Dict[str, Any]:
-        return YouTubeSong.audio_format
 
     def _download_audio(self, verbose: int = 0):
         """Download the audio by using the YouTubeSong class."""
